@@ -1,0 +1,293 @@
+{
+  "version": 3,
+  "meta": {
+    "name": "z3_poses_demo",
+    "description": "Move through fixed joint poses, open/close."
+  },
+  "nodes": {
+    "poses": {
+      "type": "subgraph",
+      "ref": "poses_sg"
+    },
+    "done": {
+      "type": "end",
+      "status": "success"
+    },
+    "abort": {
+      "type": "end",
+      "status": "failure"
+    }
+  },
+  "edges": [
+    [
+      "START",
+      "poses"
+    ]
+  ],
+  "conditional_edges": {
+    "poses": {
+      "router_field": "exit",
+      "mapping": {
+        "finished": "done",
+        "failed": "abort"
+      }
+    }
+  },
+  "subgraphs": {
+    "poses_sg": {
+      "skill": "generic",
+      "inputs": {},
+      "outputs": {},
+      "nodes": {
+        "00_open": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "01_pose_above_gears": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4274,
+                "y": -0.096,
+                "z": 0.1354
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "02_wait_0p5": {
+          "type": "tool",
+          "inputs": {
+            "seconds": 0.5
+          },
+          "tool": "robot.wait"
+        },
+        "03_capture_00": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images",
+            "label": "00"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "04_capture_01": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images",
+            "label": "01"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "05_capture_02": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images",
+            "label": "02"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "06_capture_03": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images",
+            "label": "03"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "07_capture_04": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images",
+            "label": "04"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "08_capture_05": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images",
+            "label": "05"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "09_capture_06": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images",
+            "label": "06"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "10_capture_07": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images",
+            "label": "07"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "11_capture_08": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images",
+            "label": "08"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "12_capture_09": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images",
+            "label": "09"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "13_capture_10": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images",
+            "label": "10"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "14_capture_11": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images",
+            "label": "11"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "15_capture_12": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images",
+            "label": "12"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "16_capture_13": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images",
+            "label": "13"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "17_capture_14": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images",
+            "label": "14"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "finished": {
+          "type": "noop"
+        }
+      },
+      "edges": [
+        [
+          "START",
+          "00_open"
+        ],
+        [
+          "00_open",
+          "01_pose_above_gears"
+        ],
+        [
+          "01_pose_above_gears",
+          "02_wait_0p5"
+        ],
+        [
+          "02_wait_0p5",
+          "03_capture_00"
+        ],
+        [
+          "03_capture_00",
+          "04_capture_01"
+        ],
+        [
+          "04_capture_01",
+          "05_capture_02"
+        ],
+        [
+          "05_capture_02",
+          "06_capture_03"
+        ],
+        [
+          "06_capture_03",
+          "07_capture_04"
+        ],
+        [
+          "07_capture_04",
+          "08_capture_05"
+        ],
+        [
+          "08_capture_05",
+          "09_capture_06"
+        ],
+        [
+          "09_capture_06",
+          "10_capture_07"
+        ],
+        [
+          "10_capture_07",
+          "11_capture_08"
+        ],
+        [
+          "11_capture_08",
+          "12_capture_09"
+        ],
+        [
+          "12_capture_09",
+          "13_capture_10"
+        ],
+        [
+          "13_capture_10",
+          "14_capture_11"
+        ],
+        [
+          "14_capture_11",
+          "15_capture_12"
+        ],
+        [
+          "15_capture_12",
+          "16_capture_13"
+        ],
+        [
+          "16_capture_13",
+          "17_capture_14"
+        ],
+        [
+          "17_capture_14",
+          "finished"
+        ],
+        [
+          "finished",
+          "END"
+        ]
+      ],
+      "conditional_edges": {},
+      "exit": {
+        "router_field": null,
+        "success_values": [
+          "finished"
+        ]
+      },
+      "on_error": "failed"
+    }
+  }
+}

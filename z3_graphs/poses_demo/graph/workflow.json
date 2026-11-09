@@ -1,0 +1,727 @@
+{
+  "version": 3,
+  "meta": {
+    "name": "z3_poses_demo",
+    "description": "Move through fixed joint poses, open/close."
+  },
+  "nodes": {
+    "poses": {
+      "type": "subgraph",
+      "ref": "poses_sg"
+    },
+    "done": {
+      "type": "end",
+      "status": "success"
+    },
+    "abort": {
+      "type": "end",
+      "status": "failure"
+    }
+  },
+  "edges": [
+    [
+      "START",
+      "poses"
+    ]
+  ],
+  "conditional_edges": {
+    "poses": {
+      "router_field": "exit",
+      "mapping": {
+        "finished": "done",
+        "failed": "abort"
+      }
+    }
+  },
+  "subgraphs": {
+    "poses_sg": {
+      "skill": "generic",
+      "inputs": {},
+      "outputs": {},
+      "nodes": {
+        "00_open": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "01_pose_start": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "02_pose_look_gearbox": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4431,
+                "y": 0.0278,
+                "z": 0.1286
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "03_wait_0p5": {
+          "type": "tool",
+          "inputs": {
+            "seconds": 0.5
+          },
+          "tool": "robot.wait"
+        },
+        "04_vision_gearbox": {
+          "type": "script",
+          "inputs": {
+            "nominal_xy": [
+              0.431,
+              0.027
+            ],
+            "column_z": {
+              "above_gearbox": 0.1339,
+              "pre_insert": 0.1113,
+              "touching_gearbox": 0.0997,
+              "in_gearbox": 0.0961
+            },
+            "z_top_guess": 0.034,
+            "max_offset_m": 0.006,
+            "correction_xy": [
+              0.0,
+              0.0
+            ],
+            "save_dir": "~/z3_rotor_images/gearbox"
+          },
+          "script": "scripts/detect_gearbox.py"
+        },
+        "05_pose_above_gears": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4274,
+                "y": -0.096,
+                "z": 0.1354
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "06_wait_0p5": {
+          "type": "tool",
+          "inputs": {
+            "seconds": 0.5
+          },
+          "tool": "robot.wait"
+        },
+        "07_vision_grasp_detect": {
+          "type": "script",
+          "inputs": {
+            "nominal_xy": [
+              0.4257,
+              -0.0967
+            ],
+            "z_top_guess": 0.0275,
+            "grasp_z": 0.0828,
+            "above_z": 0.1354,
+            "jaw_axis_deg": 90.0,
+            "max_offset_m": 0.008,
+            "save_dir": "~/z3_rotor_images/detections",
+            "correction_xy": [
+              0.0,
+              0.0
+            ]
+          },
+          "script": "scripts/detect_rotor.py"
+        },
+        "07_vision_grasp_above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "07_vision_grasp_detect.above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "07_vision_grasp_descend": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "07_vision_grasp_detect.grasp_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "08_close_0p55": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.55
+          },
+          "tool": "robot.close_gripper"
+        },
+        "09_pose_above_gears": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4274,
+                "y": -0.096,
+                "z": 0.1354
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "10_pose_above_gearbox": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "04_vision_gearbox.above_gearbox"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "11_pose_pre_insert": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "04_vision_gearbox.pre_insert"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "12_wait_0p5": {
+          "type": "tool",
+          "inputs": {
+            "seconds": 0.5
+          },
+          "tool": "robot.wait"
+        },
+        "13_capture_held": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images",
+            "label": "held"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "14_stiffness_soft": {
+          "type": "tool",
+          "inputs": {
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "tool": "robot.set_joint_stiffness"
+        },
+        "15_insert_in_gearbox": {
+          "type": "tool",
+          "inputs": {
+            "depth_m": 0.015199999999999991,
+            "start_pose": {
+              "$ref": "04_vision_gearbox.pre_insert"
+            },
+            "push_m": 0.003,
+            "twist_deg": 5.0,
+            "twist_step_deg": 1.0,
+            "max_cycles": 3,
+            "seated_tol_m": 0.0008,
+            "relax_close_fraction": -1.0
+          },
+          "tool": "robot.insert_twist"
+        },
+        "16_open": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "17_pose_above_gearbox": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "04_vision_gearbox.above_gearbox"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "18_stiffness_startup": {
+          "type": "tool",
+          "tool": "robot.set_joint_stiffness"
+        },
+        "19_pose_start": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "20_find_sun_search": {
+          "type": "script",
+          "inputs": {
+            "prefer_xy": [
+              0.317,
+              -0.064
+            ],
+            "exclude": [
+              [
+                0.4257,
+                -0.0967,
+                0.03
+              ],
+              [
+                0.431,
+                0.027,
+                0.04
+              ]
+            ],
+            "save_dir": "~/z3_rotor_images/sun"
+          },
+          "script": "scripts/find_sun.py"
+        },
+        "20_find_sun_look": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "20_find_sun_search.look_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "21_vision_sun": {
+          "type": "script",
+          "inputs": {
+            "nominal_xy": {
+              "$ref": "20_find_sun_search.center_xy"
+            },
+            "max_offset_m": 0.012,
+            "grip_m": 0.004,
+            "save_dir": "~/z3_rotor_images/sun"
+          },
+          "script": "scripts/detect_sun.py"
+        },
+        "22_plan_sun": {
+          "type": "script",
+          "inputs": {
+            "center_xy": {
+              "$ref": "04_vision_gearbox.center_xy"
+            },
+            "housing_top_z": {
+              "$ref": "04_vision_gearbox.housing_top_z"
+            },
+            "sun_height_m": {
+              "$ref": "21_vision_sun.height_m"
+            },
+            "grip_m": 0.004,
+            "clearance_m": 0.002,
+            "start_gap_m": 0.008,
+            "press_gap_m": 0.008
+          },
+          "script": "scripts/plan_sun_insert.py"
+        },
+        "23_grasp_sun_above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "21_vision_sun.above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "23_grasp_sun_descend": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "21_vision_sun.grasp_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "23_grasp_sun_close": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.85
+          },
+          "tool": "robot.close_gripper"
+        },
+        "23_grasp_sun_lift": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "21_vision_sun.above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "24_insert_sun_above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "22_plan_sun.above_rotor"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "24_insert_sun_pre": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "22_plan_sun.pre"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "24_insert_sun_soft": {
+          "type": "tool",
+          "inputs": {
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "tool": "robot.set_joint_stiffness"
+        },
+        "24_insert_sun_insert": {
+          "type": "tool",
+          "inputs": {
+            "depth_m": {
+              "$ref": "22_plan_sun.insert_depth_m"
+            },
+            "stall_ok_m": {
+              "$ref": "22_plan_sun.insert_stall_ok_m"
+            },
+            "start_pose": {
+              "$ref": "22_plan_sun.pre"
+            },
+            "push_m": 0.003,
+            "twist_deg": 13.0,
+            "twist_step_deg": 1.5,
+            "max_cycles": 1,
+            "seated_tol_m": 0.0008,
+            "stall_accept_at_contact": true,
+            "search_radius_m": 0.0015,
+            "search_step_m": 0.0003
+          },
+          "tool": "robot.insert_twist"
+        },
+        "24_insert_sun_release": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "24_insert_sun_stiff": {
+          "type": "tool",
+          "tool": "robot.set_joint_stiffness"
+        },
+        "24_insert_sun_up": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "22_plan_sun.above_rotor"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "25_pose_start": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "26_open": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "finished": {
+          "type": "noop"
+        }
+      },
+      "edges": [
+        [
+          "START",
+          "00_open"
+        ],
+        [
+          "00_open",
+          "01_pose_start"
+        ],
+        [
+          "01_pose_start",
+          "02_pose_look_gearbox"
+        ],
+        [
+          "02_pose_look_gearbox",
+          "03_wait_0p5"
+        ],
+        [
+          "03_wait_0p5",
+          "04_vision_gearbox"
+        ],
+        [
+          "04_vision_gearbox",
+          "05_pose_above_gears"
+        ],
+        [
+          "05_pose_above_gears",
+          "06_wait_0p5"
+        ],
+        [
+          "07_vision_grasp_detect",
+          "07_vision_grasp_above"
+        ],
+        [
+          "07_vision_grasp_above",
+          "07_vision_grasp_descend"
+        ],
+        [
+          "06_wait_0p5",
+          "07_vision_grasp_detect"
+        ],
+        [
+          "07_vision_grasp_descend",
+          "08_close_0p55"
+        ],
+        [
+          "08_close_0p55",
+          "09_pose_above_gears"
+        ],
+        [
+          "09_pose_above_gears",
+          "10_pose_above_gearbox"
+        ],
+        [
+          "10_pose_above_gearbox",
+          "11_pose_pre_insert"
+        ],
+        [
+          "11_pose_pre_insert",
+          "12_wait_0p5"
+        ],
+        [
+          "12_wait_0p5",
+          "13_capture_held"
+        ],
+        [
+          "13_capture_held",
+          "14_stiffness_soft"
+        ],
+        [
+          "14_stiffness_soft",
+          "15_insert_in_gearbox"
+        ],
+        [
+          "15_insert_in_gearbox",
+          "16_open"
+        ],
+        [
+          "16_open",
+          "17_pose_above_gearbox"
+        ],
+        [
+          "17_pose_above_gearbox",
+          "18_stiffness_startup"
+        ],
+        [
+          "18_stiffness_startup",
+          "19_pose_start"
+        ],
+        [
+          "20_find_sun_search",
+          "20_find_sun_look"
+        ],
+        [
+          "19_pose_start",
+          "20_find_sun_search"
+        ],
+        [
+          "20_find_sun_look",
+          "21_vision_sun"
+        ],
+        [
+          "21_vision_sun",
+          "22_plan_sun"
+        ],
+        [
+          "23_grasp_sun_above",
+          "23_grasp_sun_descend"
+        ],
+        [
+          "23_grasp_sun_descend",
+          "23_grasp_sun_close"
+        ],
+        [
+          "23_grasp_sun_close",
+          "23_grasp_sun_lift"
+        ],
+        [
+          "22_plan_sun",
+          "23_grasp_sun_above"
+        ],
+        [
+          "24_insert_sun_above",
+          "24_insert_sun_pre"
+        ],
+        [
+          "24_insert_sun_pre",
+          "24_insert_sun_soft"
+        ],
+        [
+          "24_insert_sun_soft",
+          "24_insert_sun_insert"
+        ],
+        [
+          "24_insert_sun_insert",
+          "24_insert_sun_release"
+        ],
+        [
+          "24_insert_sun_release",
+          "24_insert_sun_stiff"
+        ],
+        [
+          "24_insert_sun_stiff",
+          "24_insert_sun_up"
+        ],
+        [
+          "23_grasp_sun_lift",
+          "24_insert_sun_above"
+        ],
+        [
+          "24_insert_sun_up",
+          "25_pose_start"
+        ],
+        [
+          "25_pose_start",
+          "26_open"
+        ],
+        [
+          "26_open",
+          "finished"
+        ],
+        [
+          "finished",
+          "END"
+        ]
+      ],
+      "conditional_edges": {},
+      "exit": {
+        "router_field": null,
+        "success_values": [
+          "finished"
+        ]
+      },
+      "on_error": "failed"
+    }
+  }
+}

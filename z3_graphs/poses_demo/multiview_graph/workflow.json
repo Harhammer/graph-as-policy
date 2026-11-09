@@ -1,0 +1,417 @@
+{
+  "version": 3,
+  "meta": {
+    "name": "z3_poses_demo",
+    "description": "Move through fixed joint poses, open/close."
+  },
+  "nodes": {
+    "poses": {
+      "type": "subgraph",
+      "ref": "poses_sg"
+    },
+    "done": {
+      "type": "end",
+      "status": "success"
+    },
+    "abort": {
+      "type": "end",
+      "status": "failure"
+    }
+  },
+  "edges": [
+    [
+      "START",
+      "poses"
+    ]
+  ],
+  "conditional_edges": {
+    "poses": {
+      "router_field": "exit",
+      "mapping": {
+        "finished": "done",
+        "failed": "abort"
+      }
+    }
+  },
+  "subgraphs": {
+    "poses_sg": {
+      "skill": "generic",
+      "inputs": {},
+      "outputs": {},
+      "nodes": {
+        "00_open": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "01_pose_start": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "02_pose_above_gears": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4274,
+                "y": -0.096,
+                "z": 0.1354
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "03_pose_mv_top": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4652,
+                "y": -0.1064,
+                "z": 0.1273
+              },
+              "rotation": {
+                "w": 0.000197,
+                "x": 0.991778,
+                "y": -0.006004,
+                "z": -0.127828
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "04_wait_0p7": {
+          "type": "tool",
+          "inputs": {
+            "seconds": 0.7
+          },
+          "tool": "robot.wait"
+        },
+        "05_capture_mv_top": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images/multiview",
+            "label": "mv_top"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "06_pose_mv_px": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.5037,
+                "y": -0.1064,
+                "z": 0.1012
+              },
+              "rotation": {
+                "w": 0.001492,
+                "x": 0.940602,
+                "y": -0.005819,
+                "z": -0.339458
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "07_wait_0p7": {
+          "type": "tool",
+          "inputs": {
+            "seconds": 0.7
+          },
+          "tool": "robot.wait"
+        },
+        "08_capture_mv_px": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images/multiview",
+            "label": "mv_px"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "09_pose_mv_mx": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4194,
+                "y": -0.1064,
+                "z": 0.1346
+              },
+              "rotation": {
+                "w": -0.001107,
+                "x": 0.995936,
+                "y": -0.005904,
+                "z": 0.089862
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "10_wait_0p7": {
+          "type": "tool",
+          "inputs": {
+            "seconds": 0.7
+          },
+          "tool": "robot.wait"
+        },
+        "11_capture_mv_mx": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images/multiview",
+            "label": "mv_mx"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "12_pose_mv_py": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4652,
+                "y": -0.0633,
+                "z": 0.122
+              },
+              "rotation": {
+                "w": 0.214853,
+                "x": 0.968226,
+                "y": -0.033529,
+                "z": -0.123499
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "13_wait_0p7": {
+          "type": "tool",
+          "inputs": {
+            "seconds": 0.7
+          },
+          "tool": "robot.wait"
+        },
+        "14_capture_mv_py": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images/multiview",
+            "label": "mv_py"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "15_pose_mv_my": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4652,
+                "y": -0.1476,
+                "z": 0.1139
+              },
+              "rotation": {
+                "w": -0.214467,
+                "x": 0.968312,
+                "y": 0.021805,
+                "z": -0.126098
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "16_wait_0p7": {
+          "type": "tool",
+          "inputs": {
+            "seconds": 0.7
+          },
+          "tool": "robot.wait"
+        },
+        "17_capture_mv_my": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images/multiview",
+            "label": "mv_my"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "18_pose_above_gears": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4274,
+                "y": -0.096,
+                "z": 0.1354
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "19_pose_start": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "finished": {
+          "type": "noop"
+        }
+      },
+      "edges": [
+        [
+          "START",
+          "00_open"
+        ],
+        [
+          "00_open",
+          "01_pose_start"
+        ],
+        [
+          "01_pose_start",
+          "02_pose_above_gears"
+        ],
+        [
+          "02_pose_above_gears",
+          "03_pose_mv_top"
+        ],
+        [
+          "03_pose_mv_top",
+          "04_wait_0p7"
+        ],
+        [
+          "04_wait_0p7",
+          "05_capture_mv_top"
+        ],
+        [
+          "05_capture_mv_top",
+          "06_pose_mv_px"
+        ],
+        [
+          "06_pose_mv_px",
+          "07_wait_0p7"
+        ],
+        [
+          "07_wait_0p7",
+          "08_capture_mv_px"
+        ],
+        [
+          "08_capture_mv_px",
+          "09_pose_mv_mx"
+        ],
+        [
+          "09_pose_mv_mx",
+          "10_wait_0p7"
+        ],
+        [
+          "10_wait_0p7",
+          "11_capture_mv_mx"
+        ],
+        [
+          "11_capture_mv_mx",
+          "12_pose_mv_py"
+        ],
+        [
+          "12_pose_mv_py",
+          "13_wait_0p7"
+        ],
+        [
+          "13_wait_0p7",
+          "14_capture_mv_py"
+        ],
+        [
+          "14_capture_mv_py",
+          "15_pose_mv_my"
+        ],
+        [
+          "15_pose_mv_my",
+          "16_wait_0p7"
+        ],
+        [
+          "16_wait_0p7",
+          "17_capture_mv_my"
+        ],
+        [
+          "17_capture_mv_my",
+          "18_pose_above_gears"
+        ],
+        [
+          "18_pose_above_gears",
+          "19_pose_start"
+        ],
+        [
+          "19_pose_start",
+          "finished"
+        ],
+        [
+          "finished",
+          "END"
+        ]
+      ],
+      "conditional_edges": {},
+      "exit": {
+        "router_field": null,
+        "success_values": [
+          "finished"
+        ]
+      },
+      "on_error": "failed"
+    }
+  }
+}
