@@ -1,0 +1,51 @@
+[project]
+name = "z3-gap-bridge"
+version = "0.1.0"
+description = "Bridge the z3 cell (Panda via the NUC franky service, Robotiq 2F-85, wrist D405) to GaP's real-Franka msgpack server"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=1.26",
+  "msgpack>=1.0",
+  "msgpack-numpy>=0.4.8",
+  "rpyc>=6.0",
+  "pyrealsense2>=2.56",
+  "tyro>=0.9",
+  "pillow>=10",
+  "opencv-python>=4.8,<5",
+  "minimalmodbus>=2.1.1",
+  "ruckig>=0.14",
+  "scipy>=1.17.1",
+]
+
+[project.scripts]
+z3-gap-bridge = "z3_gap_bridge.bridge:main"
+z3-gap-realsense = "z3_gap_bridge.realsense_client:main"
+z3-gap-gripper = "z3_gap_bridge.tools:gripper_main"
+z3-gap-fake-server = "z3_gap_bridge.tools:fake_server_main"
+z3-gap-handeye = "z3_gap_bridge.handeye:main"
+z3-gap-tcp = "z3_gap_bridge.tcp:main"
+z3-gap-joints = "z3_gap_bridge.tools:joints_main"
+z3-gap-kincal = "z3_gap_bridge.kincal:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/z3_gap_bridge"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+extend = "../../pyproject.toml"
+# Verbatim copy from oktonex — formatted and linted there, never edited here.
+extend-exclude = ["src/z3_gap_bridge/franky_client.py"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["z3_gap_bridge"]
