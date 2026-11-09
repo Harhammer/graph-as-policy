@@ -208,7 +208,13 @@ class WorkflowExecutor:
         subgraph_exit_hook: Callable[[SubgraphExitEvent], None] | None = None,
         max_node_workers: int = 8,
         node_visit_cap: int | None = None,
+        before_node: Callable[[str, NodeDef, Any], None] | None = None,
     ):
+        #: Called as ``before_node(node_id, node, inputs)`` right before each tool /
+        #: script / skill node runs (``gap run --step`` pauses here). ``inputs`` are
+        #: the resolved inputs, or the raw ones if they cannot be resolved yet.
+        #: Raising aborts the run.
+        self._before_node = before_node
         if isinstance(workflow_dir_or_workflow, Workflow):
             self.workflow: Workflow = workflow_dir_or_workflow
             self.workflow_dir = Path(self.workflow.workflow_dir)
@@ -659,6 +665,13 @@ class WorkflowExecutor:
         # Noop: passthrough marker, used as a named subgraph terminal.
         if node.type == "noop":
             return {}
+
+        if self._before_node is not None:
+            try:
+                preview = resolve_inputs(node.inputs, scope.local_outputs)
+            except Exception:
+                preview = node.inputs
+            self._before_node(full_id, node, preview)
 
         self.trace.start_node(full_id)
         success = False

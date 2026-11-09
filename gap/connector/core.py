@@ -27,6 +27,7 @@ from __future__ import annotations
 import contextlib
 import logging
 import math
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -86,6 +87,46 @@ def _as_vec3(value: Any) -> np.ndarray | None:
             [float(value["x"]), float(value["y"]), float(value["z"])], dtype=np.float64
         )
     return np.asarray(value, dtype=np.float64).reshape(3)
+
+
+def _quat_mul(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """Hamilton product of two wxyz quaternions."""
+    aw, ax, ay, az = a
+    bw, bx, by, bz = b
+    return np.array([
+        aw * bw - ax * bx - ay * by - az * bz,
+        aw * bx + ax * bw + ay * bz - az * by,
+        aw * by - ax * bz + ay * bw + az * bx,
+        aw * bz + ax * by - ay * bx + az * bw,
+    ])
+
+
+def _twist_pattern(amplitude_deg: float, step_deg: float, cycles: int) -> list[float]:
+    """Yaw angles for a back-and-forth search: 0 -> +A -> -A -> 0, ``cycles`` times."""
+    n = max(1, round(abs(amplitude_deg) / max(abs(step_deg), 1e-6)))
+    s = abs(amplitude_deg) / n
+    one = (
+        [s * i for i in range(1, n + 1)]
+        + [s * i for i in range(n - 1, -n - 1, -1)]
+        + [s * i for i in range(-n + 1, 1)]
+    )
+    return one * max(0, int(cycles))
+
+
+def _search_rings(radius_m: float, step_m: float) -> list[np.ndarray]:
+    """Sideways offsets for a peg-in-hole search: rings at step_m, 2*step_m, ... out to radius_m,
+    points ~step_m apart around each, alternating direction; ends back at the centre."""
+    if radius_m <= 0 or step_m <= 0:
+        return []
+    out = []
+    n_rings = max(1, int(round(radius_m / step_m)))
+    for i in range(1, n_rings + 1):
+        r = radius_m * i / n_rings
+        n = max(6, int(math.ceil(2 * math.pi * r / step_m)))
+        angles = np.linspace(0, 2 * np.pi, n, endpoint=False) * (1 if i % 2 else -1)
+        out += [np.array([r * math.cos(a), r * math.sin(a)]) for a in angles]
+    out.append(np.zeros(2))
+    return out
 
 
 def _as_positions(value: Any) -> list[float]:
@@ -285,8 +326,20 @@ class Connector:
         rc("robot.open_gripper", self.open_gripper,
            summary="Open the gripper and let physics settle.",
            tags=("sim_step",))
+        rc("robot.wait", self.wait,
+           summary="Pause for `seconds`, holding the last arm and gripper command.",
+           tags=("sim_step",))
         rc("robot.close_gripper", self.close_gripper,
-           summary="Close the gripper and let physics settle.",
+           summary="Close the gripper (optionally only `fraction` of the way, 1 = fully) "
+                   "and let it settle.",
+           tags=("sim_step",))
+        rc("robot.set_joint_stiffness", self.set_joint_stiffness,
+           summary="Change the real arm's joint stiffness (7 Nm/rad values; omit = back to "
+                   "the startup values). Applied at rest; no-op in sim.",
+           tags=("sim_step",))
+        rc("robot.insert_twist", self.insert_twist,
+           summary="Push the held part `depth_m` straight down, twisting about the tool "
+                   "axis while it sticks, until it seats (gear/spline insertion).",
            tags=("sim_step",))
         # Planning.
         rc("robot.solve_ik", self._tool_solve_ik,
@@ -642,10 +695,66 @@ class Connector:
             except Exception:
                 logger.debug("refresh_camera_obs failed", exc_info=True)
 
-    def open_gripper(self, settle_steps: int = 40, arm_id: int = 0) -> dict:
-        """Open the gripper and run the settle loop (default 40 steps)."""
+    def _wait_gripper(
+        self, target_open: float, arm_id: int = 0, timeout_s: float = 5.0
+    ) -> float:
+        """Real hardware: block until the fingers reach ``target_open`` or stop moving
+        (closed on an object). Returns the measured open fraction.
+
+        "Stopped" only counts after the fingers have moved: right after the command the
+        reading is still the old position (the command takes a few ticks to reach the
+        gripper). If they never move — already there, blocked, or a dry run — it returns
+        after ``never_moved_s``.
+        """
+        reached_tol = 0.02  # open fraction; Robotiq counts are 1/255
+        still_tol = 0.004
+        still_s = 0.3  # longer than the gripper state's ~20 Hz refresh
+        never_moved_s = 1.0
+        t0 = time.monotonic()
+        first = self.get_gripper_fraction(arm_id=arm_id)
+        moved = False
+        history: list[tuple[float, float]] = []  # (t, position) over the last still_s
+        while True:
+            pos = self.get_gripper_fraction(arm_id=arm_id)
+            now = time.monotonic()
+            if abs(pos - target_open) <= reached_tol:
+                return pos
+            moved = moved or abs(pos - first) > still_tol
+            history.append((now, pos))
+            while history and history[0][0] < now - still_s:
+                history.pop(0)
+            span = max(p for _, p in history) - min(p for _, p in history)
+            # still = moved less than still_tol over a whole still_s window (a slow
+            # gripper creeps less than that between two polls, but not over 0.3 s)
+            full_window = now - t0 >= still_s and now - history[0][0] >= still_s - 0.03
+            if moved and full_window and span <= still_tol:
+                return pos  # stopped short of the target: closed on the part
+            if not moved and now - t0 >= never_moved_s:
+                logger.info(
+                    "gripper did not move in %.1f s (target %.2f, at %.2f)",
+                    never_moved_s, target_open, pos,
+                )
+                return pos
+            if now - t0 >= timeout_s:
+                logger.warning(
+                    "gripper still moving after %.1f s (target %.2f, at %.2f); continuing",
+                    timeout_s, target_open, pos,
+                )
+                return pos
+            time.sleep(0.02)
+
+    def open_gripper(
+        self, settle_steps: int = 40, arm_id: int = 0, timeout_s: float = 5.0
+    ) -> dict:
+        """Open the gripper. Simulation: run the settle loop (default 40 steps). Real
+        hardware: block until the fingers are open (at most ``timeout_s``);
+        ``settle_steps`` is ignored."""
         settle = settle_steps if settle_steps > 0 else 40
         self.set_gripper(1.0, arm_id=arm_id)
+        if self.is_real:
+            position = self._wait_gripper(1.0, arm_id=arm_id, timeout_s=timeout_s)
+            logger.info("robot.open_gripper arm=%d -> position=%.4f", arm_id, position)
+            return {"position": position}
         with self._quiet_motion():
             self._settle(settle)
         position = self.get_gripper_fraction(arm_id=arm_id)
@@ -655,18 +764,370 @@ class Connector:
         )
         return {"position": position}
 
-    def close_gripper(self, settle_steps: int = 60, arm_id: int = 0) -> dict:
-        """Close the gripper and run the settle loop (default 60 steps)."""
+    def wait(self, seconds: float = 1.0) -> None:
+        """Pause for ``seconds`` without commanding anything new.
+
+        Real hardware: wall-clock sleep. The env's republisher keeps sending the
+        last arm/gripper target, so a move that is still arriving finishes during
+        the wait (a settle loop would re-target the arm to where it is right now).
+        Simulation: advance ``seconds * control_freq`` hold steps, since sim time
+        only moves with physics steps.
+        """
+        seconds = max(0.0, float(seconds))
+        logger.info("robot.wait %.2f s", seconds)
+        if self.is_real:
+            time.sleep(seconds)
+            return
+        with self._quiet_motion():
+            self._settle(round(seconds * self.control_freq))
+
+    def close_gripper(
+        self,
+        settle_steps: int = 60,
+        arm_id: int = 0,
+        fraction: float = 1.0,
+        timeout_s: float = 5.0,
+    ) -> dict:
+        """Close the gripper. Simulation: run the settle loop (default 60 steps). Real
+        hardware: block until the fingers reach the target or stop on the part (at most
+        ``timeout_s``); ``settle_steps`` is ignored.
+
+        ``fraction`` is how far to close: 1.0 (default) closes fully, 0.5 closes
+        halfway, 0.0 leaves it open. The returned ``position`` is the measured
+        *open* fraction, as everywhere else in GaP.
+        """
         settle = settle_steps if settle_steps > 0 else 60
-        self.set_gripper(0.0, arm_id=arm_id)
+        fraction = float(np.clip(fraction, 0.0, 1.0))
+        self.set_gripper(1.0 - fraction, arm_id=arm_id)
+        if self.is_real:
+            position = self._wait_gripper(1.0 - fraction, arm_id=arm_id, timeout_s=timeout_s)
+            logger.info(
+                "robot.close_gripper arm=%d fraction=%.2f -> position=%.4f",
+                arm_id, fraction, position,
+            )
+            return {"position": position}
         with self._quiet_motion():
             self._settle(settle)
         position = self.get_gripper_fraction(arm_id=arm_id)
         logger.info(
-            "robot.close_gripper arm=%d settle=%d -> position=%.4f",
-            arm_id, settle, position,
+            "robot.close_gripper arm=%d fraction=%.2f settle=%d -> position=%.4f",
+            arm_id, fraction, settle, position,
         )
         return {"position": position}
+
+    def set_joint_stiffness(
+        self, k_theta: list[float] | None = None, timeout_s: float = 5.0
+    ) -> dict:
+        """Change the real arm's joint stiffness (firmware joint impedance, Nm/rad,
+        joints 1-7) — e.g. soft for an insertion, stiff again for precise moves.
+
+        ``None`` restores the robot client's startup values (the z3 bridge's
+        ``--k-theta``). The client applies it once the arm is at rest and confirms;
+        this blocks until then and raises after ``timeout_s``. Simulation: no-op.
+        """
+        if k_theta is not None:
+            k = [float(v) for v in k_theta]
+            if len(k) != 7 or not all(math.isfinite(v) and 0.0 < v <= 15000.0 for v in k):
+                raise ToolError(
+                    "robot.set_joint_stiffness",
+                    f"k_theta needs 7 values in (0, 15000] Nm/rad, got {k_theta!r}",
+                )
+            k_theta = k
+        fn = getattr(self.env, "set_joint_impedance", None)
+        if not self.is_real or fn is None:
+            logger.info("robot.set_joint_stiffness: no joint impedance here (sim); ignored")
+            return {"applied": False}
+        logger.info(
+            "robot.set_joint_stiffness %s",
+            "startup values" if k_theta is None else [round(v) for v in k_theta],
+        )
+        if not fn(k_theta, timeout_s=timeout_s):
+            raise ToolError(
+                "robot.set_joint_stiffness",
+                f"robot client did not confirm within {timeout_s:.1f} s. The arm must be at "
+                "rest; the z3 bridge must be new enough and run --motion nuc (the tracking "
+                "controller has its own stiffness).",
+            )
+        return {"applied": True}
+
+    def insert_twist(
+        self,
+        depth_m: float,
+        push_m: float = 0.003,
+        twist_deg: float = 5.0,
+        twist_step_deg: float = 1.0,
+        max_cycles: int = 3,
+        descend_step_m: float = 0.001,
+        contact_lag_m: float = 0.0015,
+        seated_tol_m: float = 0.0015,
+        dwell_s: float = 0.15,
+        relax_close_fraction: float = -1.0,
+        arm_id: int = 0,
+        start_pose: Se3Pose | None = None,
+        max_droop_m: float = 0.01,
+        lift_to_twist_m: float = 0.0,
+        stall_ok_m: float = 0.0,
+        stall_accept_at_contact: bool = False,
+        search_radius_m: float = 0.0,
+        search_step_m: float = 0.0003,
+        settle_tol_m: float = 0.0001,
+        settle_window_s: float = 0.4,
+        settle_timeout_s: float = 4.0,
+    ) -> dict:
+        """Push the held part ``depth_m`` straight down, twisting about the tool axis
+        whenever it sticks, until it seats.
+
+        ``start_pose``: the pose the arm was last sent to (the column's top, e.g. the
+        graph's pre_insert). A soft joint stiffness lets the arm droop under its load
+        (z3 cell 2026-11-09: joint 2 sagged 0.6 deg -> 2.3 mm sideways, 4.4 mm down), so
+        the measured pose is not the intended one. With ``start_pose`` the droop is
+        measured once (measured vs start_pose, in the base frame: a position offset and
+        an orientation offset about the tool point — gravity droop does not turn with
+        the wrist) and every command is offset by it, so the tool follows the intended
+        line from start_pose down; more than ``max_droop_m`` means the arm is not at
+        start_pose and the tool refuses. The droop is measured only once the arm has
+        settled (moved < ``settle_tol_m`` over ``settle_window_s``): right after a switch to a
+        soft stiffness it is still sagging, and a droop measured then is mostly missed
+        (2026-11-09: the rotor arrived off-axis and caught the ring's rim).
+        Without it the line starts at the measured pose (no compensation).
+
+        ``lift_to_twist_m`` > 0: turn only while lifted that far off the contact, then press
+        again. Needed when what the part rests on can turn with it: the sun gear pressed on
+        free-spinning planets drags them round by friction, so twisting under load never
+        changes the teeth's relative phase (2026-11-09: 72 steps on top of the planets).
+
+        ``stall_ok_m`` > 0: when the part's real end is not known exactly, a stall (twist
+        search exhausted) within that far above the seat height still counts as inserted,
+        if it holds with the push released — reported with ``"stalled": True``. Above it,
+        the tool fails as before. With ``stall_accept_at_contact`` such a stall is accepted
+        as soon as it happens, without twisting first (the sun gear sinks in to its end stop
+        on its own; twisting there only wastes time).
+
+        ``search_radius_m`` > 0: a part stuck on the hole's rim (stopped above the accepted
+        band) is moved sideways in rings of ``search_step_m`` out to that radius, still
+        pushing lightly, until it drops — the classic peg-in-hole spiral. Only then does the
+        twist search start. The sideways offset where it dropped is kept.
+
+        Start directly above the hole, part aligned. The tool steps down
+        ``descend_step_m`` at a time. Contact is when the measured tool point lags the
+        commanded one by more than ``contact_lag_m``; it needs a compliant arm (the z3
+        bridge's soft joint impedance), and the lag bounds the push force. While stuck,
+        it commands ``push_m`` below the measured height and steps the yaw through
+        0 -> +twist_deg -> -twist_deg -> 0 (``max_cycles`` times) until the part drops.
+        Seated = measured z within ``seated_tol_m`` of start z - ``depth_m``.
+
+        ``relax_close_fraction`` >= 0 re-sets the gripper to that close fraction at first
+        contact (e.g. 0.45 after grasping at 0.55) so the part can self-align in the
+        fingers; -1 keeps the grasp. On success the push is released at the seated
+        height. On failure the arm holds where it is (no pull-out) and the tool raises.
+        """
+        if depth_m <= 0:
+            raise ToolError("robot.insert_twist", "depth_m must be > 0")
+        from scipy.spatial.transform import Rotation
+
+        def mat(pose: Se3Pose) -> np.ndarray:
+            r_ = pose["rotation"]
+            t = np.eye(4)
+            t[:3, :3] = Rotation.from_quat([r_["x"], r_["y"], r_["z"], r_["w"]]).as_matrix()
+            t[:3, 3] = _as_vec3(pose["position"])
+            return t
+
+        settle_s = 0.0
+        if start_pose and self.is_real:
+            t0 = time.monotonic()
+            hist: list[tuple[float, np.ndarray]] = []
+            while True:
+                p_now = _as_vec3(self.get_ee_pose(arm_id=arm_id)["position"])
+                now = time.monotonic()
+                hist.append((now, p_now))
+                hist = [h for h in hist if h[0] >= now - settle_window_s]
+                spread = max(np.linalg.norm(h[1] - p_now) for h in hist)
+                if now - t0 >= settle_window_s and spread < settle_tol_m:
+                    break
+                if now - t0 > settle_timeout_s:
+                    logger.warning(
+                        "robot.insert_twist: arm still moving %.2f mm after %.1f s; measuring the "
+                        "droop anyway", spread * 1e3, settle_timeout_s,
+                    )
+                    break
+                time.sleep(0.02)
+            settle_s = time.monotonic() - t0
+        start = self.get_ee_pose(arm_id=arm_id)
+        # droop, base frame: measured position = commanded + dp, measured rotation = dR @ commanded
+        dp, dR = np.zeros(3), np.eye(3)
+        d_mm = d_deg = 0.0
+        line = start_pose if start_pose else start
+        if start_pose:
+            cmd0, meas0 = mat(start_pose), mat(start)
+            dp = meas0[:3, 3] - cmd0[:3, 3]
+            dR = meas0[:3, :3] @ cmd0[:3, :3].T
+            d_mm = float(np.linalg.norm(dp) * 1e3)
+            d_deg = float(np.degrees(np.linalg.norm(Rotation.from_matrix(dR).as_rotvec())))
+            logger.info(
+                "robot.insert_twist droop vs start_pose: %.1f mm (%+.1f, %+.1f, %+.1f), %.2f deg, "
+                "measured after %.2f s settling (compensated)",
+                d_mm, *(dp * 1e3), d_deg, settle_s,
+            )
+            if d_mm > max_droop_m * 1e3:
+                raise ToolError(
+                    "robot.insert_twist",
+                    f"the arm is {d_mm:.1f} mm from start_pose (> {max_droop_m * 1e3:.0f} mm): "
+                    "not at the column's top; refusing to insert",
+                )
+        p0 = _as_vec3(line["position"])
+        r = line["rotation"]
+        q0 = np.array([r["w"], r["x"], r["y"], r["z"]], dtype=np.float64)
+        z_seat = float(p0[2]) - float(depth_m)
+        off = self._default_tcp_offset()
+        tcp = {"x": float(off[0]), "y": float(off[1]), "z": float(off[2])}
+
+        offset = np.zeros(2)  # sideways search offset (kept once the part drops)
+
+        def command(z: float, yaw_deg: float) -> float:
+            half = math.radians(yaw_deg) / 2.0
+            q = _quat_mul(q0, np.array([math.cos(half), 0.0, 0.0, math.sin(half)]))
+            want = mat(make_pose([float(p0[0] + offset[0]), float(p0[1] + offset[1]), z], q))
+            # send it so that, drooped, the arm ends up at want
+            qs = Rotation.from_matrix(dR.T @ want[:3, :3]).as_quat()  # xyzw
+            pose = make_pose(want[:3, 3] - dp, [qs[3], qs[0], qs[1], qs[2]])
+            joints = self._solve_ik(pose, tcp, arm_id=arm_id)
+            if joints is None:
+                raise ToolError(
+                    "robot.insert_twist", f"IK failed at z={z:.4f} yaw={yaw_deg:+.1f} deg"
+                )
+            if self.is_real:
+                self.move_to_joints(joints, max_steps=0, arm_id=arm_id)
+                time.sleep(max(0.0, dwell_s))
+            else:
+                ticks = max(1, round(dwell_s * self.control_freq))
+                self.move_to_joints(joints, tolerance=0.002, max_steps=ticks, arm_id=arm_id)
+            return float(self.get_ee_pose(arm_id=arm_id)["position"]["z"])
+
+        pattern = _twist_pattern(twist_deg, twist_step_deg, max_cycles)
+        search = _search_rings(search_radius_m, search_step_m)
+        search_i = 0
+        yaw = 0.0
+        contact_z: float | None = None
+        twists = 0
+        with self._quiet_motion():
+            z_cmd = float(p0[2])
+            z = command(z_cmd, yaw)
+            sag = z - z_cmd  # free-space offset (gravity / model error), not contact
+            z_floor = z_seat - sag - abs(push_m)  # never command deeper than this
+            logger.info(
+                "robot.insert_twist start z=%.4f seat=%.4f sag=%+.4f pattern=%d steps",
+                p0[2], z_seat, sag, len(pattern),
+            )
+            false_seats = 0
+            while True:
+                if z <= z_seat + seated_tol_m:
+                    # Confirm with the push released: command the seat height itself and
+                    # check the arm gets there. Pressing can squeeze a rotor that is still
+                    # on top of the teeth into the tolerance (2026-11-09: 1.3 mm short,
+                    # "seated" while pushing, 1.6 mm short again once released).
+                    z_cmd = z_seat - sag
+                    z = command(z_cmd, yaw)
+                    if self.is_real:
+                        time.sleep(max(0.0, dwell_s))
+                        z = float(self.get_ee_pose(arm_id=arm_id)["position"]["z"])
+                    if z <= z_seat + seated_tol_m:
+                        logger.info(
+                            "robot.insert_twist SEATED z=%.4f yaw=%+.1f deg after %d twist steps",
+                            z, yaw, twists,
+                        )
+                        return {
+                            "inserted": True, "final_z": z, "contact_z": contact_z,
+                            "yaw_deg": yaw, "twist_steps": twists, "false_seats": false_seats,
+                            "droop_mm": d_mm, "droop_deg": d_deg,
+                        }
+                    false_seats += 1
+                    logger.info(
+                        "robot.insert_twist not seated once released: z=%.4f, %.1f mm above "
+                        "seat; twisting on", z, (z - z_seat) * 1e3,
+                    )
+                    # fall through: stuck at z with the arm commanded below it -> twist
+                lag = z - z_cmd - sag
+                if lag <= contact_lag_m and z_cmd > z_floor + 1e-6:
+                    z_cmd = max(z_cmd - descend_step_m, z_floor)  # free: keep going down
+                    z = command(z_cmd, yaw)
+                    continue
+                if contact_z is None:
+                    contact_z = z
+                    logger.info(
+                        "robot.insert_twist contact at z=%.4f (%.1f mm above seat)",
+                        z, (z - z_seat) * 1e3,
+                    )
+                    if relax_close_fraction >= 0:
+                        relaxed = 1.0 - float(np.clip(relax_close_fraction, 0.0, 1.0))
+                        self.set_gripper(relaxed, arm_id=arm_id)
+                        if self.is_real:
+                            self._wait_gripper(relaxed, arm_id=arm_id, timeout_s=2.0)
+                        else:
+                            self._settle(round(0.5 * self.control_freq))
+                if stall_accept_at_contact and stall_ok_m > 0 and z <= z_seat + stall_ok_m:
+                    z = command(z - sag, yaw)  # release the push: does it stay there?
+                    if self.is_real:
+                        time.sleep(max(0.0, dwell_s))
+                        z = float(self.get_ee_pose(arm_id=arm_id)["position"]["z"])
+                    if z <= z_seat + stall_ok_m:
+                        logger.info(
+                            "robot.insert_twist stopped %.1f mm above the planned end, inside the "
+                            "accepted %.1f mm: inserted as far as it goes", (z - z_seat) * 1e3,
+                            stall_ok_m * 1e3,
+                        )
+                        return {
+                            "inserted": True, "stalled": True, "final_z": z,
+                            "contact_z": contact_z, "yaw_deg": yaw, "twist_steps": twists,
+                            "false_seats": false_seats, "droop_mm": d_mm, "droop_deg": d_deg,
+                        }
+                on_rim = stall_ok_m <= 0 or z > z_seat + stall_ok_m
+                if search_radius_m > 0 and on_rim and search_i < len(search):
+                    offset[:] = search[search_i]
+                    search_i += 1
+                    z_cmd = max(z - sag - abs(push_m), z_floor)
+                    z = command(z_cmd, yaw)
+                    logger.info(
+                        "robot.insert_twist search %d/%d offset (%+.1f, %+.1f) mm z=%.4f (%.1f mm to seat)",
+                        search_i, len(search), offset[0] * 1e3, offset[1] * 1e3, z, (z - z_seat) * 1e3,
+                    )
+                    continue
+                if twists >= len(pattern):
+                    break
+                if lift_to_twist_m > 0:
+                    free = z - sag + lift_to_twist_m
+                    command(free, yaw)  # off the contact at the old angle
+                    yaw = pattern[twists]
+                    command(free, yaw)  # turn while nothing is touching
+                else:
+                    yaw = pattern[twists]
+                twists += 1
+                z_cmd = max(z - sag - abs(push_m), z_floor)  # push_m past where it is
+                z = command(z_cmd, yaw)
+                logger.info(
+                    "robot.insert_twist twist %d/%d yaw=%+.1f deg z=%.4f (%.1f mm to seat)",
+                    twists, len(pattern), yaw, z, (z - z_seat) * 1e3,
+                )
+            z_hold = command(z - sag, yaw)  # stop pushing, stay put
+            if stall_ok_m > 0:
+                if self.is_real:
+                    time.sleep(max(0.0, dwell_s))
+                    z_hold = float(self.get_ee_pose(arm_id=arm_id)["position"]["z"])
+                if z_hold <= z_seat + stall_ok_m:
+                    logger.info(
+                        "robot.insert_twist stopped %.1f mm above the planned end, within the "
+                        "accepted %.1f mm: inserted as far as it goes", (z_hold - z_seat) * 1e3,
+                        stall_ok_m * 1e3,
+                    )
+                    return {
+                        "inserted": True, "stalled": True, "final_z": z_hold,
+                        "contact_z": contact_z, "yaw_deg": yaw, "twist_steps": twists,
+                        "false_seats": false_seats, "droop_mm": d_mm, "droop_deg": d_deg,
+                    }
+        raise ToolError(
+            "robot.insert_twist",
+            f"not seated after {twists} twist steps: z={z_hold:.4f}, seat={z_seat:.4f} "
+            f"({(z_hold - z_seat) * 1e3:.1f} mm short); holding here",
+        )
 
     # ------------------------------------------------------------------
     # IK orchestration (absorbed RobotControlServicer)

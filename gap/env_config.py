@@ -145,6 +145,34 @@ def libero_pro_root() -> str | None:
     return _opt("GAP_LIBERO_PRO_ROOT")
 
 
+def franka_tcp_flange_m() -> tuple[float, float, float]:
+    """``GAP_FRANKA_TCP_FLANGE_M`` — the real Franka's tool point (TCP) as ``"x,y,z"`` metres
+    in the flange (``panda_link8``) frame, z pointing out of the flange. Default
+    ``0,0,0.157``: the stock Robotiq 2F-85 fingertip. FK and IK both derive from it."""
+    raw = _opt("GAP_FRANKA_TCP_FLANGE_M")
+    if raw is None:
+        return (0.0, 0.0, 0.157)
+    parts = [float(v) for v in raw.replace(" ", "").split(",")]
+    if len(parts) != 3:
+        raise ValueError(f"GAP_FRANKA_TCP_FLANGE_M needs 3 comma-separated values, got {raw!r}")
+    return (parts[0], parts[1], parts[2])
+
+
+def franka_tcp_rot_z_deg() -> float:
+    """``GAP_FRANKA_TCP_ROT_Z_DEG`` — tool-frame yaw relative to ``panda_hand`` in degrees.
+    Default 45 (the Robotiq mounting the example was built with)."""
+    raw = _opt("GAP_FRANKA_TCP_ROT_Z_DEG")
+    return 45.0 if raw is None else float(raw)
+
+
+def franka_heartbeat_log_s() -> float:
+    """``GAP_FRANKA_HEARTBEAT_LOG_S`` — seconds between the real Franka's healthy
+    ``[FrankaRealEnv hb]`` log lines. Default 1 (every heartbeat); 0 = never print a
+    healthy one. STALE warnings print every time regardless."""
+    raw = _opt("GAP_FRANKA_HEARTBEAT_LOG_S")
+    return 1.0 if raw is None else max(0.0, float(raw))
+
+
 def ur_urdf() -> str | None:
     """``GAP_UR_URDF`` — UR URDF used for FK in the UR+ZED connector."""
     return _opt("GAP_UR_URDF")

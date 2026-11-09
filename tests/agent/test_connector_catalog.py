@@ -49,7 +49,7 @@ def test_same_tool_names(real_connector_registry):
         "robot.go_to_pose", "robot.go_to_pose_cartesian", "robot.move_to_joints",
         "robot.execute_trajectory", "robot.go_home", "robot.solve_ik",
         "robot.open_gripper", "robot.close_gripper", "robot.get_gripper",
-        "robot.get_gripper_pose",
+        "robot.get_gripper_pose", "robot.wait", "robot.insert_twist", "robot.set_joint_stiffness",
     }
     expected_sim = {
         "sim.reset", "sim.step", "sim.check_success", "sim.apply_policy_action",

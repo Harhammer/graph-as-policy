@@ -73,8 +73,11 @@ Untagged, read-only, available on every connector (sim and real).
 | `robot.move_to_joints` | `joint_config`, `tolerance: float = 0.0`, `max_steps: int = 0` | `None` |
 | `robot.execute_trajectory` | `trajectory: Trajectory`, `subsample: int = 0`, `tolerance: float = 0.0`, `max_steps_per_waypoint: int = 0` | `None` |
 | `robot.go_home` | — | `None` |
-| `robot.open_gripper` | `settle_steps: int = 40`, `arm_id: int = 0` | `{"position": float}` — measured fraction after settling |
-| `robot.close_gripper` | `settle_steps: int = 60`, `arm_id: int = 0` | `{"position": float}` |
+| `robot.open_gripper` | `settle_steps: int = 40`, `arm_id: int = 0`, `timeout_s: float = 5.0` | `{"position": float}` — measured fraction after settling |
+| `robot.close_gripper` | `settle_steps: int = 60`, `arm_id: int = 0`, `fraction: float = 1.0`, `timeout_s: float = 5.0` | `{"position": float}` |
+| `robot.wait` | `seconds: float = 1.0` | `None` |
+| `robot.set_joint_stiffness` | `k_theta: list[float] \| None = None`, `timeout_s: float = 5.0` | `{"applied": bool}`; `ToolError` when the robot client does not confirm |
+| `robot.insert_twist` | `depth_m: float`, `push_m: float = 0.003`, `twist_deg: float = 5.0`, `twist_step_deg: float = 1.0`, `max_cycles: int = 3`, `descend_step_m: float = 0.001`, `contact_lag_m: float = 0.0015`, `seated_tol_m: float = 0.0015`, `dwell_s: float = 0.15`, `relax_close_fraction: float = -1.0`, `arm_id: int = 0` | `{"inserted": True, "final_z", "contact_z", "yaw_deg", "twist_steps"}`; `ToolError` when not seated |
 
 Behavioral details, verified against
 [`gap/connector/core.py`](gh-engine:gap/connector/core.py):
@@ -110,6 +113,38 @@ Behavioral details, verified against
 - **`robot.open_gripper` / `robot.close_gripper`** set the gripper
   fraction and run a physics settle loop (`settle_steps <= 0` falls back
   to the 40/60-step defaults), then return the measured fraction.
+  `close_gripper`'s `fraction` is how far to close (1.0 = fully, the
+  default; 0.5 = halfway), clipped to [0, 1]; the returned `position` is
+  still the measured *open* fraction. On real hardware `settle_steps` is
+  ignored: the call polls the measured finger position and returns when
+  the fingers reach the target or stop on a part (once they have moved),
+  after 1 s if they never move (already there, or a dry run), and at
+  `timeout_s` at the latest.
+- **`robot.wait`** pauses without commanding anything new. On real
+  hardware it sleeps; the env keeps republishing the last arm/gripper
+  target, so a move still arriving finishes during the wait. In
+  simulation it advances `seconds * control_freq` hold steps.
+- **`robot.set_joint_stiffness`** changes the real arm's firmware joint
+  impedance (7 values, Nm/rad), e.g. soft for an insertion and stiff
+  again for precise moves. `None` restores the robot client's startup
+  values (the z3 bridge's `--k-theta`). libfranka accepts the change only
+  while no motion runs, so the client applies it once the arm is at rest
+  and echoes the request number; the tool blocks until then and raises
+  after `timeout_s`. Only the bridge's `--motion nuc` uses this
+  impedance. In simulation it is a no-op returning `{"applied": False}`.
+- **`robot.insert_twist`** inserts a held part (a gear, spline or
+  keyed shaft) from directly above the hole. It steps the tool point
+  straight down `descend_step_m` at a time. When the measured height lags
+  the commanded one by more than `contact_lag_m`, the part is stuck. It
+  then commands `push_m` below the measured height and steps the yaw
+  about the tool axis 0 → +`twist_deg` → −`twist_deg` → 0, `max_cycles`
+  times, until the part drops. It is seated when the measured height is
+  within `seated_tol_m` of the start height minus `depth_m`; the push is
+  then released. It needs a compliant arm: the lag bounds the push
+  force only if the controller lets the arm fall behind its target. On
+  failure it holds where it is (no pull-out) and raises `ToolError`.
+  `relax_close_fraction >= 0` re-sets the gripper at first contact so
+  the part can self-align in the fingers.
 
 ## robot.* — planning (tag: `planning`)
 

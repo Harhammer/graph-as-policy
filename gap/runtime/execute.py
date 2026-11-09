@@ -29,7 +29,7 @@ import json
 import logging
 import tempfile
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -76,6 +76,7 @@ def execute(
     checkpoints: str = "warn",
     max_node_workers: int = 8,
     policies: dict[str, dict[str, Any]] | None = None,
+    before_node: Callable[[str, Any, Any], None] | None = None,
 ) -> ExecutionResult:
     """Execute a workflow graph and return an :class:`ExecutionResult`.
 
@@ -111,6 +112,9 @@ def execute(
             Policy skills otherwise auto-resolve to their shipped preset, so
             this is only needed to point a policy at an external/custom
             server.
+        before_node: Optional ``(node_id, node, inputs)`` callback run right
+            before each tool/script/skill node (``gap run --step``). Raising
+            aborts the run.
 
     Never raises on workflow failure — the exception lands in
     ``result.error`` with ``result.success == False``.
@@ -186,6 +190,7 @@ def execute(
             checkpoints=checkpoints,
             world_snapshot_fn=world_snapshot_fn,
             max_node_workers=max_node_workers,
+            before_node=before_node,
         )
         if inputs:
             executor.initial_inputs.update(inputs)

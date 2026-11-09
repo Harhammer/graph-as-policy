@@ -30,6 +30,22 @@ from gap.envs.msgpack_bridge import MsgpackNumpyServer, start_server_in_backgrou
 
 logger = logging.getLogger(__name__)
 
+def franka_tcp() -> tuple[np.ndarray, float]:
+    """(tcp_offset, tcp_rotation_z) for the real Franka, from ``env_config``.
+
+    ``tcp_offset`` is in gap's NEGATED link-to-TCP convention in the ``panda_hand`` frame
+    (see ``CuRoboBackend._tcp_to_link``); ``panda_hand`` is ``panda_link8`` rotated -45 deg
+    about z with the same origin (panda_description). The single source for both the env's
+    FK and the connector's IK, so the two cannot drift apart again.
+    """
+    from gap import env_config
+
+    tool_in_flange = np.asarray(env_config.franka_tcp_flange_m(), dtype=np.float64)
+    c = math.sqrt(0.5)
+    hand_r_flange = np.array([[c, -c, 0.0], [c, c, 0.0], [0.0, 0.0, 1.0]])
+    return -(hand_r_flange @ tool_in_flange), math.radians(env_config.franka_tcp_rot_z_deg())
+
+
 # Franka Panda home joint configuration (radians)
 _FRANKA_HOME_JOINTS = (0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785)
 
@@ -58,6 +74,14 @@ class FrankaRealEnv(BaseEnv):
     ) -> None:
         super().__init__()
 
+        # Tool point: shadows the class defaults with the configured TCP (see franka_tcp).
+        self._TCP_OFFSET, self._TCP_ROTATION_Z = franka_tcp()
+        logger.info(
+            "[FrankaRealEnv] TCP offset (panda_hand, gap convention) %s, rotation z %.1f deg",
+            np.round(self._TCP_OFFSET, 4).tolist(),
+            math.degrees(self._TCP_ROTATION_Z),
+        )
+
         # Camera name mapping: robots_realtime names the camera node freely
         # in the session yaml; gap workflows expect configurable camera names
         self.camera_names = camera_names or ["robot0_robotview"]
@@ -68,6 +92,15 @@ class FrankaRealEnv(BaseEnv):
             dtype=np.float64,
         )
         self._gripper_fraction = 1.0  # open
+        # Counts real gripper commands (_set_gripper calls); 0 = the seed below. Sent as
+        # left.gripper_seq so a client can tell the graph's first "open" (1.0, same value
+        # as the seed) from the seed itself — a value-change gate would drop it.
+        self._gripper_seq = 0
+        # Joint-stiffness requests (set_joint_impedance): left.joint_impedance (7 Nm/rad, or
+        # empty = the client's startup values) tagged left.impedance_seq. The client echoes
+        # the last seq it applied in its observation (left.impedance_seq).
+        self._impedance: list[float] = []
+        self._impedance_seq = 0
         self._action_publish_period = 0.02  # 50 Hz
 
         # Msgpack server for robots_realtime communication.
@@ -79,11 +112,15 @@ class FrankaRealEnv(BaseEnv):
         # Viser IK gizmo, jolting the arm before the workflow has commanded
         # anything.
         self.server = MsgpackNumpyServer(host=host, port=port)
+        self._listen_addr = f"{host}:{port}"
         self.server.latest_action = {
             "timestamp": time.time(),
             "left": {
                 "joint_pos": self._current_joints.astype(np.float32).tolist(),
                 "gripper": float(self._gripper_fraction),
+                "gripper_seq": 0,
+                "joint_impedance": [],
+                "impedance_seq": 0,
             },
         }
         start_server_in_background(self.server)
@@ -159,12 +196,18 @@ class FrankaRealEnv(BaseEnv):
                 with self._target_lock:
                     target = self._target_joints
                     gripper = self._target_gripper
+                    gripper_seq = self._gripper_seq
+                    impedance = list(self._impedance)
+                    impedance_seq = self._impedance_seq
                 if target is not None:
                     self.server.latest_action = {
                         "timestamp": time.time(),
                         "left": {
                             "joint_pos": target.astype(np.float32).tolist(),
                             "gripper": float(gripper),
+                            "gripper_seq": int(gripper_seq),
+                            "joint_impedance": impedance,
+                            "impedance_seq": int(impedance_seq),
                         },
                     }
                     self._republish_count += 1
@@ -177,6 +220,13 @@ class FrankaRealEnv(BaseEnv):
             logger.exception("[FrankaRealEnv] REPUBLISHER CRASHED")
 
     def _heartbeat_loop(self) -> None:
+        from gap import env_config
+
+        log_every_s = env_config.franka_heartbeat_log_s()
+        last_logged = 0.0
+        ever_observed = False
+        started = time.time()
+        last_waiting_log = 0.0
         last_count = 0
         last_t = time.time()
         last_observed_joints: np.ndarray | None = None
@@ -243,6 +293,28 @@ class FrankaRealEnv(BaseEnv):
                 "cmd_vs_obs": cmd_vs_obs,
             }
 
+            # Before the client's first observation, "stale" just means it has not
+            # connected yet (normal at startup, e.g. bridge started second): say so once,
+            # then every 10 s, instead of a STALE warning every second. Once a client has
+            # been seen, STALE means it went silent and prints every time.
+            if ts_wire is not None:
+                ever_observed = True
+            if not ever_observed:
+                if now - last_waiting_log >= 10.0 - 1e-3:
+                    waited = now - started
+                    logger.info(
+                        "[FrankaRealEnv] waiting for the robot client (bridge / rr-session) "
+                        "to connect on %s%s", self._listen_addr,
+                        f" ({waited:.0f} s so far)" if waited >= 5.0 else "",
+                    )
+                    last_waiting_log = now
+                continue
+            # Healthy lines are throttled by GAP_FRANKA_HEARTBEAT_LOG_S (0 = never);
+            # a STALE line always prints. The checks above run every period either way.
+            if not self.obs_stale:
+                if log_every_s <= 0 or now - last_logged < log_every_s - 1e-3:
+                    continue
+            last_logged = now
             log = logger.warning if self.obs_stale else logger.info
             log(
                 "[FrankaRealEnv hb] republish_hz=%.1f obs_age=%.0fms "
@@ -355,6 +427,9 @@ class FrankaRealEnv(BaseEnv):
                 obs["robot_cartesian_pos_0"] = np.concatenate([
                     ee_pos, ee_quat_wxyz, [gripper_frac]
                 ]).astype(np.float32)
+            ack = _g(arm_data, "impedance_seq")
+            if ack is not None:
+                obs["joint_impedance_ack_0"] = int(ack)
 
         # --- Camera ---
         # The realtime client rate-limits camera fields (see
@@ -443,8 +518,12 @@ class FrankaRealEnv(BaseEnv):
         R_tcp = vtf.SO3.from_rpy_radians(0.0, 0.0, self._TCP_ROTATION_Z)
         R_tool = R_link @ R_tcp
 
-        # TCP offset is in the panda_hand frame (before tool rotation)
-        tip_pos = np.asarray(se3.translation(), dtype=np.float64) + \
+        # TCP offset is in the panda_hand frame (before tool rotation), stored in gap's
+        # NEGATED link-to-TCP convention (see CuRoboBackend._tcp_to_link: link = tcp +
+        # R_link @ offset). The tip is therefore link - R_link @ offset. Adding it put the
+        # Robotiq tip 0.157 m BEHIND the flange: get_ee_pose read ~0.31 m high while IK
+        # placed the real fingertips correctly (z3 fork, measured 2026-11-06).
+        tip_pos = np.asarray(se3.translation(), dtype=np.float64) - \
             R_link.as_matrix() @ self._TCP_OFFSET
 
         return (
@@ -601,7 +680,37 @@ class FrankaRealEnv(BaseEnv):
         self._gripper_fraction = float(np.clip(fraction, 0.0, 1.0))
         with self._target_lock:
             self._target_gripper = self._gripper_fraction
+            self._gripper_seq += 1
         time.sleep(0.15)  # hardware settle
+
+    def set_joint_impedance(
+        self, k_theta: list[float] | None, timeout_s: float = 5.0
+    ) -> bool:
+        """Ask the robot client to change the arm's joint stiffness (firmware joint
+        impedance, 7 values in Nm/rad); ``None`` = back to the client's startup values.
+
+        The client applies it once the arm is at rest (libfranka refuses it mid-motion)
+        and echoes the request number. Blocks until then; False after ``timeout_s``.
+        """
+        with self._target_lock:
+            self._impedance = [] if k_theta is None else [float(v) for v in k_theta]
+            self._impedance_seq += 1
+            seq = self._impedance_seq
+            commanded = self._target_joints is not None
+        if not commanded:
+            logger.warning(
+                "[FrankaRealEnv] joint stiffness request %d is not sent until the first "
+                "arm command (the republisher only runs once there is a target)", seq,
+            )
+        deadline = time.time() + max(0.0, timeout_s)
+        while True:
+            self._update_from_network()
+            ack = self._obs.get("joint_impedance_ack_0")
+            if ack is not None and int(ack) >= seq:
+                return True
+            if time.time() >= deadline:
+                return False
+            time.sleep(0.02)
 
     def _step_once(self) -> None:
         """Hold the current joint target and pace one publish period.
@@ -688,6 +797,7 @@ def make_env(
     from gap.envs.registry import EnvConfig
 
     env = FrankaRealEnv(camera_names=camera_names, port=port, host=host)
+    tcp_offset, tcp_rotation_z = franka_tcp()
     config = EnvConfig(
         arm_dof=7,
         num_arms=1,
@@ -696,8 +806,8 @@ def make_env(
         home_joints=_FRANKA_HOME_JOINTS,
         # Robotiq gripper TCP: offset from panda_hand to fingertip;
         # Robotiq is mounted with pi/4 Z-rotation relative to panda_hand.
-        tcp_offset=(0.0, 0.0, -0.157),
-        tcp_rotation_z=math.pi / 4,
+        tcp_offset=tuple(float(v) for v in tcp_offset),
+        tcp_rotation_z=tcp_rotation_z,
         robot_urdf_path="panda_description",
         default_cameras=tuple(env.camera_names),
         is_real=True,

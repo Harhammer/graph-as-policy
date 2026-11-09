@@ -79,10 +79,62 @@ def register(subparsers: argparse._SubParsersAction) -> None:
              "when possible, else strings)",
     )
     sp.add_argument(
+        "--step", action="store_true",
+        help="Debug: pause before every node and wait for Enter "
+             "(c + Enter = run the rest without pausing, q + Enter = abort)",
+    )
+    sp.add_argument(
         "-v", "--verbose", action="store_true",
         help="Enable debug logging",
     )
     sp.set_defaults(func=_handle)
+
+
+class StepAborted(RuntimeError):
+    """The user answered ``q`` at a ``--step`` prompt."""
+
+
+class _StepPrompter:
+    """``--step``: show the next node and wait for Enter before it runs.
+
+    One prompt at a time (parallel branches queue behind the lock). Nothing new is
+    commanded while it waits: on a real robot the arm holds its last target.
+    """
+
+    def __init__(self, input_fn=input, print_fn=print) -> None:
+        import threading
+
+        self._lock = threading.Lock()
+        self._paused = True
+        self._input = input_fn
+        self._print = print_fn
+
+    def __call__(self, node_id: str, node, inputs) -> None:
+        import json
+
+        if not self._paused:
+            return
+        with self._lock:
+            if not self._paused:
+                return
+            what = getattr(node, "tool", None) or getattr(node, "script", None) or ""
+            try:
+                shown = json.dumps(inputs, default=str)
+            except (TypeError, ValueError):
+                shown = repr(inputs)
+            if len(shown) > 400:
+                shown = shown[:400] + " ..."
+            self._print(f"\n[step] next: {node_id}  ({node.type} {what})")
+            self._print(f"[step] inputs: {shown}")
+            try:
+                answer = self._input("[step] Enter = run, c = continue without pausing, "
+                                     "q = abort > ").strip().lower()
+            except EOFError:
+                answer = "c"  # no terminal attached: don't hang
+            if answer == "q":
+                raise StepAborted(f"aborted by user before {node_id}")
+            if answer == "c":
+                self._paused = False
 
 
 def _parse_inputs(pairs: list[str]) -> dict:
@@ -205,6 +257,7 @@ def _handle(args: argparse.Namespace) -> int:
             inputs=_parse_inputs(args.inputs) or None,
             trace_dir=trace_dir,
             checkpoints=args.checkpoints,
+            before_node=_StepPrompter() if args.step else None,
         )
         save_video = getattr(connector, "save_video", None)
         if record_video and save_video is not None and trace_dir is not None:

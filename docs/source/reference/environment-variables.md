@@ -77,6 +77,9 @@ Read by the env layer and the parallel benchmark workers
 | `GAP_LIBERO_PERTURBED` | `1`/`true`/`yes`; default: unset | Opt into the perturbed LIBERO variant (scripted moving basket) for envs built without an explicit `perturbed=` kwarg. |
 | `GAP_VAB_ROOT` | path; default: `<repo>/third_party/Variational-Automation-Benchmark` | Location of the vab LIBERO fork (variance/packing suites). |
 | `GAP_LIBERO_PRO_ROOT` | path; default: `<repo>/third_party/LIBERO-PRO` | Location of the LIBERO-PRO fork (classic suites). |
+| `GAP_FRANKA_TCP_FLANGE_M` | `"x,y,z"` metres; default `0,0,0.157` (stock Robotiq 2F-85 fingertip) | The real Franka's tool point in the flange (`panda_link8`) frame, z out of the flange. Both the env's FK (`get_ee_pose`) and the connector's IK derive from it. |
+| `GAP_FRANKA_TCP_ROT_Z_DEG` | degrees; default `45` | Tool-frame yaw relative to `panda_hand` for the real Franka. |
+| `GAP_FRANKA_HEARTBEAT_LOG_S` | seconds; default `1` | How often the real Franka's healthy `[FrankaRealEnv hb]` status line is logged. `0` = never; `10` = every 10 s. `STALE` warnings are always logged, and the health checks themselves run every second regardless. |
 | `GAP_UR_URDF` | path; default: unset (`ur5e_description`) | UR URDF used for forward kinematics in the UR+ZED connector. |
 | `GAP_UR_ZED_CALIB` | path to a 4×4 camera→wrist `.npy`; default: unset | Hand-eye calibration for the UR+ZED connector. Missing calibration degrades **silently to identity** (warning only) — camera poses then equal the wrist pose. |
 
