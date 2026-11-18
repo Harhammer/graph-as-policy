@@ -93,3 +93,22 @@ def test_timeout_caps_a_slow_gripper(clock):
     conn = _connector(clock, ramp(1.0, 0.0, t_start=0.0, duration=20.0))
     conn.close_gripper(fraction=1.0, timeout_s=2.0)
     assert 2.0 <= clock.t <= 2.05
+
+
+def test_a_gripper_that_must_open_but_never_moves_raises(clock):
+    """2026-11-10: the Robotiq lost power (camera remount) and sat unactivated at 75 %
+    closed; every command was ignored and a whole run went on as if it had opened."""
+    from gap_core.errors import ToolError
+
+    conn = _connector(clock, lambda t: 0.2477)
+    with pytest.raises(ToolError, match="did not move"):
+        conn.open_gripper()
+    assert 1.0 <= clock.t <= 1.05
+    with pytest.raises(ToolError, match="not responding"):
+        conn.close_gripper(fraction=0.55)  # target 0.45 open: it has to open to get there
+
+
+def test_closing_on_a_held_part_that_does_not_move_is_fine(clock):
+    """Closing again on a part already held: the fingers can't move, nothing is wrong."""
+    conn = _connector(clock, lambda t: 0.45)
+    assert conn.close_gripper(fraction=1.0)["position"] == pytest.approx(0.45)

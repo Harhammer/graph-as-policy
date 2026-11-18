@@ -696,20 +696,29 @@ class Connector:
                 logger.debug("refresh_camera_obs failed", exc_info=True)
 
     def _wait_gripper(
-        self, target_open: float, arm_id: int = 0, timeout_s: float = 5.0
+        self,
+        target_open: float,
+        arm_id: int = 0,
+        timeout_s: float = 5.0,
+        tool: str = "robot.gripper",
     ) -> float:
         """Real hardware: block until the fingers reach ``target_open`` or stop moving
         (closed on an object). Returns the measured open fraction.
 
         "Stopped" only counts after the fingers have moved: right after the command the
         reading is still the old position (the command takes a few ticks to reach the
-        gripper). If they never move — already there, blocked, or a dry run — it returns
-        after ``never_moved_s``.
+        gripper). If they never move it returns after ``never_moved_s`` — fine when
+        closing (already closed on the part), but when the target needs the fingers to
+        OPEN, nothing can block that: the gripper is not responding (lost power and not
+        re-activated, or no communication), so it raises instead of letting the graph go
+        on as if it had let go or could grasp (2026-11-10: the Robotiq lost power while
+        the camera was remounted, sat at 75 % closed, and a whole run went through).
         """
         reached_tol = 0.02  # open fraction; Robotiq counts are 1/255
         still_tol = 0.004
         still_s = 0.3  # longer than the gripper state's ~20 Hz refresh
         never_moved_s = 1.0
+        must_open_tol = 0.05  # target this much more open than the fingers: they must move
         t0 = time.monotonic()
         first = self.get_gripper_fraction(arm_id=arm_id)
         moved = False
@@ -730,6 +739,14 @@ class Connector:
             if moved and full_window and span <= still_tol:
                 return pos  # stopped short of the target: closed on the part
             if not moved and now - t0 >= never_moved_s:
+                if target_open - pos > must_open_tol:
+                    raise ToolError(
+                        tool,
+                        f"the gripper did not move in {never_moved_s:.0f} s although it had to "
+                        f"open (target {target_open:.2f} open, at {pos:.2f}): not responding — "
+                        "not activated after a power loss, or no communication. Re-activate it "
+                        "(z3: restart the NUC franky service, then the bridge) before running on",
+                    )
                 logger.info(
                     "gripper did not move in %.1f s (target %.2f, at %.2f)",
                     never_moved_s, target_open, pos,
@@ -752,7 +769,9 @@ class Connector:
         settle = settle_steps if settle_steps > 0 else 40
         self.set_gripper(1.0, arm_id=arm_id)
         if self.is_real:
-            position = self._wait_gripper(1.0, arm_id=arm_id, timeout_s=timeout_s)
+            position = self._wait_gripper(
+                1.0, arm_id=arm_id, timeout_s=timeout_s, tool="robot.open_gripper"
+            )
             logger.info("robot.open_gripper arm=%d -> position=%.4f", arm_id, position)
             return {"position": position}
         with self._quiet_motion():
@@ -800,7 +819,9 @@ class Connector:
         fraction = float(np.clip(fraction, 0.0, 1.0))
         self.set_gripper(1.0 - fraction, arm_id=arm_id)
         if self.is_real:
-            position = self._wait_gripper(1.0 - fraction, arm_id=arm_id, timeout_s=timeout_s)
+            position = self._wait_gripper(
+                1.0 - fraction, arm_id=arm_id, timeout_s=timeout_s, tool="robot.close_gripper"
+            )
             logger.info(
                 "robot.close_gripper arm=%d fraction=%.2f -> position=%.4f",
                 arm_id, fraction, position,
@@ -1061,7 +1082,9 @@ class Connector:
                         relaxed = 1.0 - float(np.clip(relax_close_fraction, 0.0, 1.0))
                         self.set_gripper(relaxed, arm_id=arm_id)
                         if self.is_real:
-                            self._wait_gripper(relaxed, arm_id=arm_id, timeout_s=2.0)
+                            self._wait_gripper(
+                                relaxed, arm_id=arm_id, timeout_s=2.0, tool="robot.insert_twist"
+                            )
                         else:
                             self._settle(round(0.5 * self.control_freq))
                 if stall_accept_at_contact and stall_ok_m > 0 and z <= z_seat + stall_ok_m:
