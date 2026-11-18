@@ -223,6 +223,94 @@ GEARBOX_VISION = {
     "correction_xy": [0.0, 0.0],  # held rotor vs tool axis; 0 with the vision grasp
 }
 
+# --- screw kitting (build.py --screws -> screws_graph/), 2026-11-10 ---------------------------
+# Black M4 socket head cap screws in two piles, M4x18 and M4x25, right of the gearbox (-y,
+# ~21 cm). SCREW_COUNT of each are laid out on the free table LEFT of the gearbox (+y), side by
+# side, heads in a row, tips pointing away from the gearbox. One look pose sees both piles;
+# every ("screw", label, k) step looks again, picks the best screw of that length the fingers
+# fit around (scripts/screw_vision.py: length measured, not taken from the pile), and puts it
+# on slot k. Nothing graspable of that length -> the graph stops: spread the pile a little.
+#
+# LOOK: the camera ~30 cm above the table sees both piles (~0.7 mm/px), fingers clear of them.
+# Hand-guided and read 2026-11-10 10:12 (z3-gap-joints --kinematics ~/z3_handeye/combined_kinfit:
+# rpy was [-179.9, -1.8, 1.8], made exactly vertical as all poses here).
+EEF_POSES["look_screws"] = {"xyz": [0.3312, -0.1806, 0.2024], "rpy_deg": [180, 0, 0]}
+SCREW_LOOK = "look_screws"
+SCREW_COUNT = 4
+# Head of slot 0 per length [m, base frame]; slot k = slot 0 + k * SCREW_KIT_PITCH. The gearbox
+# (centre 0.428, 0.028, base ~70 mm square) ends at y ~0.063; the end cap and plate lie further
+# toward the robot (x ~0.30-0.33): the open fingers (+-16 mm along x) stay clear of both.
+SCREW_KIT = {"M4x18": (0.420, 0.105), "M4x25": (0.420, 0.150)}
+SCREW_KIT_PITCH = (0.025, 0.0)
+SCREW_KIT_AXIS_DEG = 90.0  # head -> tip along +y, away from the gearbox
+# (keep |axis| within 20-160 deg: then every screw, however it lies, can be turned onto it
+# within joint 7's range; along x, a screw lying the wrong way round could not)
+# Boxes (x0, y0, x1, y1) where screws are never taken from: the kit (screws already placed),
+# the gearbox and the rotor's fixture (their black edges look like screws).
+SCREW_EXCLUDE = [[0.395, 0.090, 0.520, 0.200], [0.373, -0.027, 0.483, 0.083],
+                 [0.385, -0.135, 0.465, -0.055]]
+SCREW = {
+    # fingertip ends above the table when closing: on the head (D7: 3.5 mm to its equator) or on
+    # the shank (D4: 2 mm). Below the bridge's floor guard: run it with --z-floor-m 0.002
+    # (README); with the usual 0.008 the fingertips stop ~6 mm above the table. 0.5 on the
+    # shank scraped the table (10:36, the grasp held): +1 mm; the Fin Ray tips wrap the shank.
+    "head_tip_above_table_m": 0.0025,
+    "shank_tip_above_table_m": 0.0015,
+    # the table in the corrected kinematics (fingertips touched it): grasp and place heights.
+    # The depth from the look pose reads 3.8 mm lower (10:12) and is only checked against it.
+    "table_z": 0.0046,
+    "max_table_gap_m": 0.008,
+    # 2.5 bumped the tips into the table in the kit (10:47; the grasp height at the piles was
+    # right): the table there sits a little higher. The screw drops ~2.5 mm from 4.
+    "place_tip_above_table_m": 0.004,
+    "approach_m": 0.03,
+    "carry_m": 0.10,  # fingertips above the table between pile and kit: over the gearbox
+    # The fingertips seen from above (clearance check), measured 2026-11-10: 7 mm contact width,
+    # 8 mm outside to outside at a 5 mm gap = 1.5 mm thin tips
+    "finger_width_m": 0.007,  # along the screw
+    "finger_thick_m": 0.0015,  # across it
+    "approach_open_m": 0.013,  # fingertip gap while coming down: SCREW_APPROACH_CLOSE
+}
+# robot.close_gripper fraction while coming down, and how far it lets go in the kit. Measured
+# 2026-11-10: 0.75 -> 13 mm between the fingertips, 0.86 -> 5 mm: ~73 mm per unit, the tips meet
+# at ~0.93. 13 mm leaves 4.5 mm each side of a shank, 3 of a head; with the thin tips the gap
+# hardly changes what can be grasped (8 + 5 of the loosened piles from 10 to 14 mm). The gripper
+# opens fully before every look: closed, the fingers hang over the upper pile in the wrist image.
+SCREW_APPROACH_CLOSE = 0.75
+
+# --- screw holder (build.py --holder -> holder_graph/), 2026-11-16 ---------------------------
+# First step toward screwing: the four M4x18 standing in the holder ("Screw Holder 18mm M4 -
+# Part 1.step": 60 x 20 x 17 mm block, holes 15 mm apart, 12 mm deep) are each taken out and
+# put back into the same hole (scripts/detect_holder.py, holder_vision.py). One look finds
+# the holes; the screw goes back on the grasp's own x/y, so only the grasp needs the vision.
+# Reprinted in cream at 15:40 (taped down): the heads are then also found in colour, 0.4 mm
+# around the CAD row; the black one is found from the depth alone (0.5 mm worse there).
+# The look pose: the wrist camera 22 cm over the holder (recorded 2026-11-16 15:19, rpy was
+# [177.3, 1.8, -3.0], made exactly vertical). The holder then lay at (0.427, -0.225), its row
+# along -y (-93 deg).
+EEF_POSES["look_holder"] = {"xyz": [0.4503, -0.2242, 0.1280], "rpy_deg": [180, 0, 0]}
+HOLDER_LOOK = "look_holder"
+HOLDER = {
+    # fingertips above the block's top (17 mm) when closing: 2 mm below the head (23-27 mm),
+    # the Fin Ray tips wrap the head from below. The tips then sit 21 mm above the table.
+    "grip_tip_above_block_m": 0.004,
+    "release_above_m": 0.002,  # let go this much higher: the screw drops onto the hole's floor
+    # fingertips above the table over the holder (heads 27 mm; the screw's tip, 16 mm below the
+    # fingertips when held, then clears the block by 17 mm)
+    "approach_tip_above_table_m": 0.05,
+    "table_z": SCREW["table_z"],
+    "max_table_gap_m": SCREW["max_table_gap_m"],
+    "save_dir": f"{CAPTURE_DIR}/screwing",
+    # fingertips' centre vs where the tool is sent [m], in the tool's yaw-0 frame (turns with the
+    # wrist; see detect_holder.py). 0 until measured from the peek frames.
+    "tool_correction_xy": [0.0, 0.0],
+}
+HOLDER_HOLES = [0, 1, 2, 3]  # numbered from the robot's left (+y)
+# A wrist frame at the grasp pose, just before closing (<save_dir>/peek): the head between the
+# fingertips, to measure how far off the grasp is (the first run's grasp was visibly off
+# centre, 2026-11-16 15:48). ~0.5 s per screw; False once tool_correction_xy is measured.
+HOLDER_PEEK = True
+
 INSERT = {
     # The settings of the runs that worked on 2026-11-09 (16:32, 16:57). Tried and reverted the
     # same day: a +-9.5 deg twist (a caught rotor tilts further) and unloading 0.5 mm per twist
@@ -238,6 +326,20 @@ INSERT = {
     "relax_close_fraction": -1.0,  # e.g. 0.45 to loosen the 0.55 grasp at contact; -1 = keep
 }
 
+
+# --- droop test (build.py --droop [NOTE] -> droop_graph/), 2026-11-10 -------------------------
+# How far the soft arm sags at the poses the assembly uses, gripper empty. Each pose is
+# approached from DROOP_APPROACH_M above (as the insertion is), measured stiff, switched to
+# STIFFNESS["soft"], measured once still, switched back; DROOP_REPS times. pre_insert is the
+# nominal column (SEATED's x/y, no camera); above_gears is the rotor grasp's approach,
+# look_sun the sun's area. Results: ~/z3_droop/<time>_<note>.jsonl (scripts/droop_report.py).
+DROOP_POSES = ["pre_insert", "above_gears", "look_sun", "start"]
+DROOP_REPS = 3
+DROOP_APPROACH_M = 0.03
+# The bridge's --k-theta (STIFFNESS["startup"] is None = "whatever it was started with"); only
+# used to turn the stiff phase's joint error into a torque in the report.
+K_STARTUP = [3000.0, 3000.0, 3000.0, 2500.0, 2500.0, 2000.0, 2000.0]
+_DROOP_NOTE = ""
 
 _MULTIVIEW = False
 
@@ -288,6 +390,8 @@ def build() -> Workflow:
     previous = "START"
     gearbox_node = None  # set by a ("vision_gearbox",) step
     sun_node = plan_node = find_node = None  # set by ("vision_sun",) / ("plan_sun",) / ("find_sun",)
+    droop_node = None  # set by ("droop_begin",)
+    holder_node = None  # set by ("holder_look",)
 
     def chain(prefix: str, nodes: list[tuple[str, dict]]) -> tuple[str, str]:
         """Add nodes prefix_<suffix> in order, edges between them; (first, last) names."""
@@ -469,6 +573,78 @@ def build() -> Workflow:
                 ("stiff", stiff("startup")),
                 ("up", go(f"{plan_node}.above_rotor")),
             ])
+        elif step[0] == "screw":
+            label, k = step[1], int(step[2])
+            if SCREW_LOOK not in EEF_POSES:
+                raise ValueError(f"screw: record EEF_POSES[{SCREW_LOOK!r}] first (see SCREW_LOOK)")
+            slot = [SCREW_KIT[label][j] + k * SCREW_KIT_PITCH[j] for j in (0, 1)]
+            det = f"{name}_detect"
+            first, last = chain(name, [
+                ("open", gripper(None)),
+                ("look", {"type": "tool", "tool": "robot.go_to_pose",
+                          "inputs": {"pose": eef_pose(EEF_POSES[SCREW_LOOK]), **MOVE}}),
+                ("detect", {"type": "script", "script": "scripts/detect_screw.py", "inputs": {
+                    "label": label, "slot_head_xy": slot, "kit_axis_deg": SCREW_KIT_AXIS_DEG,
+                    "exclude": SCREW_EXCLUDE, "save_dir": f"{CAPTURE_DIR}/screws", **SCREW}}),
+                ("ready", gripper(SCREW_APPROACH_CLOSE)),
+                ("above", go(f"{det}.above_pose")),
+                ("descend", go(f"{det}.grasp_pose")),
+                ("close", gripper(1.0)),
+                # no held-check: the gripper can't tell (the Fin Ray tips close to ~0.99 on a shank
+                # or on nothing), and looking again cost a move per screw (dropped 2026-11-10)
+                ("lift", go(f"{det}.lift_pose")),
+                ("to_kit", go(f"{det}.slot_high")),
+                ("above_slot", go(f"{det}.slot_above")),
+                ("place", go(f"{det}.place_pose")),
+                ("release", gripper(SCREW_APPROACH_CLOSE)),
+                ("up", go(f"{det}.slot_above")),
+            ])
+        elif step[0] in ("holder_look", "holder_check"):
+            if HOLDER_LOOK not in EEF_POSES:
+                raise ValueError(f"{step[0]}: record EEF_POSES[{HOLDER_LOOK!r}] first (see HOLDER_LOOK)")
+            first, last = chain(name, [
+                ("open", gripper(None)),  # closed, the fingers hang in the image over the holder
+                ("look", {"type": "tool", "tool": "robot.go_to_pose",
+                          "inputs": {"pose": eef_pose(EEF_POSES[HOLDER_LOOK]), **MOVE}}),
+                ("detect", {"type": "script", "script": "scripts/detect_holder.py",
+                            "inputs": {**HOLDER, "label": step[0], "require_all": True}}),
+            ])
+            if step[0] == "holder_look":
+                holder_node = last
+        elif step[0] == "holder_screw":
+            if holder_node is None:
+                raise ValueError("holder_screw needs ('holder_look',) before it")
+            hole = f"{holder_node}.holes[{int(step[1])}]"
+            first, last = chain(name, [
+                ("ready", gripper(SCREW_APPROACH_CLOSE)),
+                ("above", go(f"{hole}.above_pose")),
+                ("descend", go(f"{hole}.grasp_pose")),
+                *([("peek", {"type": "script", "script": "scripts/capture_frame.py", "inputs": {
+                    "out_dir": f"{HOLDER['save_dir']}/peek", "label": f"hole{int(step[1])}"}})]
+                  if HOLDER_PEEK else []),
+                ("close", gripper(1.0)),
+                ("out", go(f"{hole}.above_pose")),
+                ("back", go(f"{hole}.release_pose")),
+                ("release", gripper(SCREW_APPROACH_CLOSE)),
+                ("up", go(f"{hole}.above_pose")),
+            ])
+        elif step[0] == "droop_begin":
+            droop_node = name
+            sg.add_node(name, type="script", script="scripts/droop_begin.py",
+                        inputs={"note": _DROOP_NOTE})
+        elif step[0] == "droop":
+            if droop_node is None:
+                raise ValueError("droop needs ('droop_begin',) before it")
+            label, phase, rep = step[1], step[2], int(step[3])
+            k = STIFFNESS[phase] if phase in STIFFNESS and STIFFNESS[phase] else K_STARTUP
+            sg.add_node(name, type="script", script="scripts/measure_droop.py", inputs={
+                "pose": eef_pose(EEF_POSES[label]), "label": label, "phase": phase, "rep": rep,
+                "session": Ref(f"{droop_node}.session"), "k_theta": k})
+        elif step[0] == "droop_report":
+            if droop_node is None:
+                raise ValueError("droop_report needs ('droop_begin',) before it")
+            sg.add_node(name, type="script", script="scripts/droop_report.py",
+                        inputs={"session": Ref(f"{droop_node}.session")})
         elif step[0] == "open":
             sg.add_node(
                 name,
@@ -575,6 +751,53 @@ def sun_steps() -> list[tuple[str, ...]]:
     ]
 
 
+def screw_steps() -> list[tuple[str, ...]]:
+    """Screw kitting: SCREW_COUNT of each length from the piles onto the kit, then home."""
+    steps: list[tuple[str, ...]] = [("open",), ("stiffness", "startup"), ("pose", "start")]
+    for label in SCREW_KIT:
+        steps += [("screw", label, str(k)) for k in range(SCREW_COUNT)]
+    return steps + [("pose", "start")]
+
+
+def full_steps() -> list[tuple[str, ...]]:
+    """The whole demo: the gearbox (STEPS: rotor and sun gear in), then the screw kitting next
+    to it. STEPS ends at start with the gripper open, so the kitting goes on from there; the
+    stiffness goes back to the bridge's own first (the sun gear's insertion softens the arm)."""
+    kitting = [step for step in screw_steps() if step[0] == "screw"]
+    return [*STEPS, ("stiffness", "startup"), *kitting, ("pose", "start")]
+
+
+def holder_steps() -> list[tuple[str, ...]]:
+    """Screw holder: look once, each screw out of its hole and back in, look again (all four
+    must be back), home."""
+    return [("open",), ("stiffness", "startup"), ("pose", "start"), ("holder_look",),
+            *[("holder_screw", str(k)) for k in HOLDER_HOLES], ("holder_check",), ("pose", "start")]
+
+
+def droop_steps() -> list[tuple[str, ...]]:
+    """Droop test (see DROOP_POSES): gripper empty, every pose DROOP_REPS times from above."""
+    steps: list[tuple[str, ...]] = [("open",), ("stiffness", "startup"), ("pose", "start"), ("droop_begin",)]
+    for label in DROOP_POSES:
+        above = f"{label}__above"
+        spec = EEF_POSES[label]
+        EEF_POSES[above] = {"xyz": [*spec["xyz"][:2], round(spec["xyz"][2] + DROOP_APPROACH_M, 4)],
+                            "rpy_deg": list(spec["rpy_deg"])}
+        for rep in range(DROOP_REPS):
+            steps += [("pose", above), ("pose", label), ("droop", label, "stiff", str(rep)),
+                      ("stiffness", "soft"), ("droop", label, "soft", str(rep)), ("stiffness", "startup")]
+        steps.append(("pose", above))
+    return steps + [("pose", "start"), ("droop_report",)]
+
+
+def camcheck_steps() -> list[tuple[str, ...]]:
+    """Camera check after the camera was touched: one gearbox look (gripper empty). The
+    detected axis was (0.4285, 0.0265) +-0.7 mm, top 0.033 +-0.5 mm, over 32 looks on
+    2026-11-09/10 with the camera untouched (gearbox in its fixture): a clearly larger shift,
+    with the gearbox not moved, means the camera moved -> redo the hand-eye calibration."""
+    return [("open",), ("stiffness", "startup"), ("pose", "start"), ("pose", "look_gearbox"),
+            ("wait", .5), ("vision_gearbox",), ("pose", "start")]
+
+
 def capture_steps(n: int) -> list[tuple[str, ...]]:
     """Dataset session: look from above_gears and save n frames. Run with --step and move
     or turn the rotor in its fixture (and vary the light) at each prompt."""
@@ -596,6 +819,17 @@ def main(argv: list[str] | None = None) -> int:
                     help="build sun_graph/: only the sun gear stage (rotor already seated)")
     ap.add_argument("--multiview", action="store_true",
                     help="build multiview_graph/: look at the rotor from 5 poses and save each frame")
+    ap.add_argument("--screws", action="store_true",
+                    help="build screws_graph/: kit SCREW_COUNT M4x18 and M4x25 from their piles")
+    ap.add_argument("--full", action="store_true",
+                    help="build full_graph/: the gearbox (graph/), then the screw kitting")
+    ap.add_argument("--holder", action="store_true",
+                    help="build holder_graph/: each M4x18 out of the screw holder and back in")
+    ap.add_argument("--camcheck", action="store_true",
+                    help="build camcheck_graph/: one gearbox look, to see if the camera moved")
+    ap.add_argument("--droop", nargs="?", const="", default=None, metavar="NOTE",
+                    help="build droop_graph/: the soft arm's sag at DROOP_POSES (NOTE goes into "
+                         "the result file's name, e.g. the Desk load)")
     args = ap.parse_args(argv)
     here = Path(__file__).resolve().parent
     out = here / "graph"
@@ -605,6 +839,23 @@ def main(argv: list[str] | None = None) -> int:
     elif args.sun:
         STEPS = sun_steps()
         out = here / "sun_graph"
+    elif args.screws:
+        STEPS = screw_steps()
+        out = here / "screws_graph"
+    elif args.full:
+        STEPS = full_steps()
+        out = here / "full_graph"
+    elif args.holder:
+        STEPS = holder_steps()
+        out = here / "holder_graph"
+    elif args.camcheck:
+        STEPS = camcheck_steps()
+        out = here / "camcheck_graph"
+    elif args.droop is not None:
+        global _DROOP_NOTE
+        _DROOP_NOTE = args.droop
+        STEPS = droop_steps()
+        out = here / "droop_graph"
     elif args.multiview:
         global _MULTIVIEW
         _MULTIVIEW = True
@@ -622,6 +873,12 @@ def main(argv: list[str] | None = None) -> int:
         detail = table.get(step[1], "") if len(step) > 1 else ""
         if step[0] in ("pose", "insert") and step[1] in GEARBOX_COLUMN and ("vision_gearbox",) in STEPS[:i]:
             detail = f"x/y from the camera (vision_gearbox), z {EEF_POSES[step[1]]['xyz'][2]}"
+        if step[0] == "screw":
+            k = int(step[2])
+            slot = [SCREW_KIT[step[1]][j] + k * SCREW_KIT_PITCH[j] for j in (0, 1)]
+            detail = f"from {SCREW_LOOK}, head onto ({slot[0]:.3f}, {slot[1]:.3f})"
+        if step[0] in ("holder_look", "holder_check"):
+            detail = f"from {HOLDER_LOOK} {EEF_POSES[HOLDER_LOOK]['xyz']}"
         print(f"  {i:02d} {' '.join(map(str, step))}  {detail}".rstrip())
     return 0
 

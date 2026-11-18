@@ -1,0 +1,743 @@
+{
+  "version": 3,
+  "meta": {
+    "name": "z3_poses_demo",
+    "description": "Move through fixed joint poses, open/close."
+  },
+  "nodes": {
+    "poses": {
+      "type": "subgraph",
+      "ref": "poses_sg"
+    },
+    "done": {
+      "type": "end",
+      "status": "success"
+    },
+    "abort": {
+      "type": "end",
+      "status": "failure"
+    }
+  },
+  "edges": [
+    [
+      "START",
+      "poses"
+    ]
+  ],
+  "conditional_edges": {
+    "poses": {
+      "router_field": "exit",
+      "mapping": {
+        "finished": "done",
+        "failed": "abort"
+      }
+    }
+  },
+  "subgraphs": {
+    "poses_sg": {
+      "skill": "generic",
+      "inputs": {},
+      "outputs": {},
+      "nodes": {
+        "00_open": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "01_stiffness_startup": {
+          "type": "tool",
+          "tool": "robot.set_joint_stiffness"
+        },
+        "02_pose_start": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "03_holder_look_open": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "03_holder_look_look": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4503,
+                "y": -0.2242,
+                "z": 0.128
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "03_holder_look_detect": {
+          "type": "script",
+          "inputs": {
+            "grip_tip_above_block_m": 0.004,
+            "release_above_m": 0.002,
+            "approach_tip_above_table_m": 0.05,
+            "table_z": 0.0046,
+            "max_table_gap_m": 0.008,
+            "save_dir": "~/z3_rotor_images/screwing",
+            "tool_correction_xy": [
+              0.0,
+              0.0
+            ],
+            "label": "holder_look",
+            "require_all": true
+          },
+          "script": "scripts/detect_holder.py"
+        },
+        "04_holder_screw_0_ready": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "04_holder_screw_0_above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "03_holder_look_detect.holes[0].above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "04_holder_screw_0_descend": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "03_holder_look_detect.holes[0].grasp_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "04_holder_screw_0_peek": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images/screwing/peek",
+            "label": "hole0"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "04_holder_screw_0_close": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 1.0
+          },
+          "tool": "robot.close_gripper"
+        },
+        "04_holder_screw_0_out": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "03_holder_look_detect.holes[0].above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "04_holder_screw_0_back": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "03_holder_look_detect.holes[0].release_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "04_holder_screw_0_release": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "04_holder_screw_0_up": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "03_holder_look_detect.holes[0].above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "05_holder_screw_1_ready": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "05_holder_screw_1_above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "03_holder_look_detect.holes[1].above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "05_holder_screw_1_descend": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "03_holder_look_detect.holes[1].grasp_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "05_holder_screw_1_peek": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images/screwing/peek",
+            "label": "hole1"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "05_holder_screw_1_close": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 1.0
+          },
+          "tool": "robot.close_gripper"
+        },
+        "05_holder_screw_1_out": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "03_holder_look_detect.holes[1].above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "05_holder_screw_1_back": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "03_holder_look_detect.holes[1].release_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "05_holder_screw_1_release": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "05_holder_screw_1_up": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "03_holder_look_detect.holes[1].above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "06_holder_screw_2_ready": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "06_holder_screw_2_above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "03_holder_look_detect.holes[2].above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "06_holder_screw_2_descend": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "03_holder_look_detect.holes[2].grasp_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "06_holder_screw_2_peek": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images/screwing/peek",
+            "label": "hole2"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "06_holder_screw_2_close": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 1.0
+          },
+          "tool": "robot.close_gripper"
+        },
+        "06_holder_screw_2_out": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "03_holder_look_detect.holes[2].above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "06_holder_screw_2_back": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "03_holder_look_detect.holes[2].release_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "06_holder_screw_2_release": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "06_holder_screw_2_up": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "03_holder_look_detect.holes[2].above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "07_holder_screw_3_ready": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "07_holder_screw_3_above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "03_holder_look_detect.holes[3].above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "07_holder_screw_3_descend": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "03_holder_look_detect.holes[3].grasp_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "07_holder_screw_3_peek": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images/screwing/peek",
+            "label": "hole3"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "07_holder_screw_3_close": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 1.0
+          },
+          "tool": "robot.close_gripper"
+        },
+        "07_holder_screw_3_out": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "03_holder_look_detect.holes[3].above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "07_holder_screw_3_back": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "03_holder_look_detect.holes[3].release_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "07_holder_screw_3_release": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "07_holder_screw_3_up": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "03_holder_look_detect.holes[3].above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "08_holder_check_open": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "08_holder_check_look": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4503,
+                "y": -0.2242,
+                "z": 0.128
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "08_holder_check_detect": {
+          "type": "script",
+          "inputs": {
+            "grip_tip_above_block_m": 0.004,
+            "release_above_m": 0.002,
+            "approach_tip_above_table_m": 0.05,
+            "table_z": 0.0046,
+            "max_table_gap_m": 0.008,
+            "save_dir": "~/z3_rotor_images/screwing",
+            "tool_correction_xy": [
+              0.0,
+              0.0
+            ],
+            "label": "holder_check",
+            "require_all": true
+          },
+          "script": "scripts/detect_holder.py"
+        },
+        "09_pose_start": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "finished": {
+          "type": "noop"
+        }
+      },
+      "edges": [
+        [
+          "START",
+          "00_open"
+        ],
+        [
+          "00_open",
+          "01_stiffness_startup"
+        ],
+        [
+          "01_stiffness_startup",
+          "02_pose_start"
+        ],
+        [
+          "03_holder_look_open",
+          "03_holder_look_look"
+        ],
+        [
+          "03_holder_look_look",
+          "03_holder_look_detect"
+        ],
+        [
+          "02_pose_start",
+          "03_holder_look_open"
+        ],
+        [
+          "04_holder_screw_0_ready",
+          "04_holder_screw_0_above"
+        ],
+        [
+          "04_holder_screw_0_above",
+          "04_holder_screw_0_descend"
+        ],
+        [
+          "04_holder_screw_0_descend",
+          "04_holder_screw_0_peek"
+        ],
+        [
+          "04_holder_screw_0_peek",
+          "04_holder_screw_0_close"
+        ],
+        [
+          "04_holder_screw_0_close",
+          "04_holder_screw_0_out"
+        ],
+        [
+          "04_holder_screw_0_out",
+          "04_holder_screw_0_back"
+        ],
+        [
+          "04_holder_screw_0_back",
+          "04_holder_screw_0_release"
+        ],
+        [
+          "04_holder_screw_0_release",
+          "04_holder_screw_0_up"
+        ],
+        [
+          "03_holder_look_detect",
+          "04_holder_screw_0_ready"
+        ],
+        [
+          "05_holder_screw_1_ready",
+          "05_holder_screw_1_above"
+        ],
+        [
+          "05_holder_screw_1_above",
+          "05_holder_screw_1_descend"
+        ],
+        [
+          "05_holder_screw_1_descend",
+          "05_holder_screw_1_peek"
+        ],
+        [
+          "05_holder_screw_1_peek",
+          "05_holder_screw_1_close"
+        ],
+        [
+          "05_holder_screw_1_close",
+          "05_holder_screw_1_out"
+        ],
+        [
+          "05_holder_screw_1_out",
+          "05_holder_screw_1_back"
+        ],
+        [
+          "05_holder_screw_1_back",
+          "05_holder_screw_1_release"
+        ],
+        [
+          "05_holder_screw_1_release",
+          "05_holder_screw_1_up"
+        ],
+        [
+          "04_holder_screw_0_up",
+          "05_holder_screw_1_ready"
+        ],
+        [
+          "06_holder_screw_2_ready",
+          "06_holder_screw_2_above"
+        ],
+        [
+          "06_holder_screw_2_above",
+          "06_holder_screw_2_descend"
+        ],
+        [
+          "06_holder_screw_2_descend",
+          "06_holder_screw_2_peek"
+        ],
+        [
+          "06_holder_screw_2_peek",
+          "06_holder_screw_2_close"
+        ],
+        [
+          "06_holder_screw_2_close",
+          "06_holder_screw_2_out"
+        ],
+        [
+          "06_holder_screw_2_out",
+          "06_holder_screw_2_back"
+        ],
+        [
+          "06_holder_screw_2_back",
+          "06_holder_screw_2_release"
+        ],
+        [
+          "06_holder_screw_2_release",
+          "06_holder_screw_2_up"
+        ],
+        [
+          "05_holder_screw_1_up",
+          "06_holder_screw_2_ready"
+        ],
+        [
+          "07_holder_screw_3_ready",
+          "07_holder_screw_3_above"
+        ],
+        [
+          "07_holder_screw_3_above",
+          "07_holder_screw_3_descend"
+        ],
+        [
+          "07_holder_screw_3_descend",
+          "07_holder_screw_3_peek"
+        ],
+        [
+          "07_holder_screw_3_peek",
+          "07_holder_screw_3_close"
+        ],
+        [
+          "07_holder_screw_3_close",
+          "07_holder_screw_3_out"
+        ],
+        [
+          "07_holder_screw_3_out",
+          "07_holder_screw_3_back"
+        ],
+        [
+          "07_holder_screw_3_back",
+          "07_holder_screw_3_release"
+        ],
+        [
+          "07_holder_screw_3_release",
+          "07_holder_screw_3_up"
+        ],
+        [
+          "06_holder_screw_2_up",
+          "07_holder_screw_3_ready"
+        ],
+        [
+          "08_holder_check_open",
+          "08_holder_check_look"
+        ],
+        [
+          "08_holder_check_look",
+          "08_holder_check_detect"
+        ],
+        [
+          "07_holder_screw_3_up",
+          "08_holder_check_open"
+        ],
+        [
+          "08_holder_check_detect",
+          "09_pose_start"
+        ],
+        [
+          "09_pose_start",
+          "finished"
+        ],
+        [
+          "finished",
+          "END"
+        ]
+      ],
+      "conditional_edges": {},
+      "exit": {
+        "router_field": null,
+        "success_values": [
+          "finished"
+        ]
+      },
+      "on_error": "failed"
+    }
+  }
+}

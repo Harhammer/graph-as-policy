@@ -1,0 +1,2095 @@
+{
+  "version": 3,
+  "meta": {
+    "name": "z3_poses_demo",
+    "description": "Move through fixed joint poses, open/close."
+  },
+  "nodes": {
+    "poses": {
+      "type": "subgraph",
+      "ref": "poses_sg"
+    },
+    "done": {
+      "type": "end",
+      "status": "success"
+    },
+    "abort": {
+      "type": "end",
+      "status": "failure"
+    }
+  },
+  "edges": [
+    [
+      "START",
+      "poses"
+    ]
+  ],
+  "conditional_edges": {
+    "poses": {
+      "router_field": "exit",
+      "mapping": {
+        "finished": "done",
+        "failed": "abort"
+      }
+    }
+  },
+  "subgraphs": {
+    "poses_sg": {
+      "skill": "generic",
+      "inputs": {},
+      "outputs": {},
+      "nodes": {
+        "00_open": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "01_stiffness_startup": {
+          "type": "tool",
+          "tool": "robot.set_joint_stiffness"
+        },
+        "02_pose_start": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "03_droop_begin": {
+          "type": "script",
+          "inputs": {
+            "note": "desk1075"
+          },
+          "script": "scripts/droop_begin.py"
+        },
+        "04_pose_pre_insert__above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.431,
+                "y": 0.027,
+                "z": 0.1413
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "05_pose_pre_insert": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.431,
+                "y": 0.027,
+                "z": 0.1113
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "06_droop_pre_insert_stiff_0": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.431,
+                "y": 0.027,
+                "z": 0.1113
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "pre_insert",
+            "phase": "stiff",
+            "rep": 0,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              3000.0,
+              3000.0,
+              3000.0,
+              2500.0,
+              2500.0,
+              2000.0,
+              2000.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "07_stiffness_soft": {
+          "type": "tool",
+          "inputs": {
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "tool": "robot.set_joint_stiffness"
+        },
+        "08_droop_pre_insert_soft_0": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.431,
+                "y": 0.027,
+                "z": 0.1113
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "pre_insert",
+            "phase": "soft",
+            "rep": 0,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "09_stiffness_startup": {
+          "type": "tool",
+          "tool": "robot.set_joint_stiffness"
+        },
+        "10_pose_pre_insert__above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.431,
+                "y": 0.027,
+                "z": 0.1413
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "11_pose_pre_insert": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.431,
+                "y": 0.027,
+                "z": 0.1113
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "12_droop_pre_insert_stiff_1": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.431,
+                "y": 0.027,
+                "z": 0.1113
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "pre_insert",
+            "phase": "stiff",
+            "rep": 1,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              3000.0,
+              3000.0,
+              3000.0,
+              2500.0,
+              2500.0,
+              2000.0,
+              2000.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "13_stiffness_soft": {
+          "type": "tool",
+          "inputs": {
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "tool": "robot.set_joint_stiffness"
+        },
+        "14_droop_pre_insert_soft_1": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.431,
+                "y": 0.027,
+                "z": 0.1113
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "pre_insert",
+            "phase": "soft",
+            "rep": 1,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "15_stiffness_startup": {
+          "type": "tool",
+          "tool": "robot.set_joint_stiffness"
+        },
+        "16_pose_pre_insert__above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.431,
+                "y": 0.027,
+                "z": 0.1413
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "17_pose_pre_insert": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.431,
+                "y": 0.027,
+                "z": 0.1113
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "18_droop_pre_insert_stiff_2": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.431,
+                "y": 0.027,
+                "z": 0.1113
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "pre_insert",
+            "phase": "stiff",
+            "rep": 2,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              3000.0,
+              3000.0,
+              3000.0,
+              2500.0,
+              2500.0,
+              2000.0,
+              2000.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "19_stiffness_soft": {
+          "type": "tool",
+          "inputs": {
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "tool": "robot.set_joint_stiffness"
+        },
+        "20_droop_pre_insert_soft_2": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.431,
+                "y": 0.027,
+                "z": 0.1113
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "pre_insert",
+            "phase": "soft",
+            "rep": 2,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "21_stiffness_startup": {
+          "type": "tool",
+          "tool": "robot.set_joint_stiffness"
+        },
+        "22_pose_pre_insert__above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.431,
+                "y": 0.027,
+                "z": 0.1413
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "23_pose_above_gears__above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4274,
+                "y": -0.096,
+                "z": 0.1654
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "24_pose_above_gears": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4274,
+                "y": -0.096,
+                "z": 0.1354
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "25_droop_above_gears_stiff_0": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4274,
+                "y": -0.096,
+                "z": 0.1354
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "above_gears",
+            "phase": "stiff",
+            "rep": 0,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              3000.0,
+              3000.0,
+              3000.0,
+              2500.0,
+              2500.0,
+              2000.0,
+              2000.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "26_stiffness_soft": {
+          "type": "tool",
+          "inputs": {
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "tool": "robot.set_joint_stiffness"
+        },
+        "27_droop_above_gears_soft_0": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4274,
+                "y": -0.096,
+                "z": 0.1354
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "above_gears",
+            "phase": "soft",
+            "rep": 0,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "28_stiffness_startup": {
+          "type": "tool",
+          "tool": "robot.set_joint_stiffness"
+        },
+        "29_pose_above_gears__above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4274,
+                "y": -0.096,
+                "z": 0.1654
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "30_pose_above_gears": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4274,
+                "y": -0.096,
+                "z": 0.1354
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "31_droop_above_gears_stiff_1": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4274,
+                "y": -0.096,
+                "z": 0.1354
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "above_gears",
+            "phase": "stiff",
+            "rep": 1,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              3000.0,
+              3000.0,
+              3000.0,
+              2500.0,
+              2500.0,
+              2000.0,
+              2000.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "32_stiffness_soft": {
+          "type": "tool",
+          "inputs": {
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "tool": "robot.set_joint_stiffness"
+        },
+        "33_droop_above_gears_soft_1": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4274,
+                "y": -0.096,
+                "z": 0.1354
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "above_gears",
+            "phase": "soft",
+            "rep": 1,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "34_stiffness_startup": {
+          "type": "tool",
+          "tool": "robot.set_joint_stiffness"
+        },
+        "35_pose_above_gears__above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4274,
+                "y": -0.096,
+                "z": 0.1654
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "36_pose_above_gears": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4274,
+                "y": -0.096,
+                "z": 0.1354
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "37_droop_above_gears_stiff_2": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4274,
+                "y": -0.096,
+                "z": 0.1354
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "above_gears",
+            "phase": "stiff",
+            "rep": 2,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              3000.0,
+              3000.0,
+              3000.0,
+              2500.0,
+              2500.0,
+              2000.0,
+              2000.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "38_stiffness_soft": {
+          "type": "tool",
+          "inputs": {
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "tool": "robot.set_joint_stiffness"
+        },
+        "39_droop_above_gears_soft_2": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4274,
+                "y": -0.096,
+                "z": 0.1354
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "above_gears",
+            "phase": "soft",
+            "rep": 2,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "40_stiffness_startup": {
+          "type": "tool",
+          "tool": "robot.set_joint_stiffness"
+        },
+        "41_pose_above_gears__above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4274,
+                "y": -0.096,
+                "z": 0.1654
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "42_pose_look_sun__above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.332,
+                "y": -0.064,
+                "z": 0.135
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "43_pose_look_sun": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.332,
+                "y": -0.064,
+                "z": 0.105
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "44_droop_look_sun_stiff_0": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.332,
+                "y": -0.064,
+                "z": 0.105
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "look_sun",
+            "phase": "stiff",
+            "rep": 0,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              3000.0,
+              3000.0,
+              3000.0,
+              2500.0,
+              2500.0,
+              2000.0,
+              2000.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "45_stiffness_soft": {
+          "type": "tool",
+          "inputs": {
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "tool": "robot.set_joint_stiffness"
+        },
+        "46_droop_look_sun_soft_0": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.332,
+                "y": -0.064,
+                "z": 0.105
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "look_sun",
+            "phase": "soft",
+            "rep": 0,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "47_stiffness_startup": {
+          "type": "tool",
+          "tool": "robot.set_joint_stiffness"
+        },
+        "48_pose_look_sun__above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.332,
+                "y": -0.064,
+                "z": 0.135
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "49_pose_look_sun": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.332,
+                "y": -0.064,
+                "z": 0.105
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "50_droop_look_sun_stiff_1": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.332,
+                "y": -0.064,
+                "z": 0.105
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "look_sun",
+            "phase": "stiff",
+            "rep": 1,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              3000.0,
+              3000.0,
+              3000.0,
+              2500.0,
+              2500.0,
+              2000.0,
+              2000.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "51_stiffness_soft": {
+          "type": "tool",
+          "inputs": {
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "tool": "robot.set_joint_stiffness"
+        },
+        "52_droop_look_sun_soft_1": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.332,
+                "y": -0.064,
+                "z": 0.105
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "look_sun",
+            "phase": "soft",
+            "rep": 1,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "53_stiffness_startup": {
+          "type": "tool",
+          "tool": "robot.set_joint_stiffness"
+        },
+        "54_pose_look_sun__above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.332,
+                "y": -0.064,
+                "z": 0.135
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "55_pose_look_sun": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.332,
+                "y": -0.064,
+                "z": 0.105
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "56_droop_look_sun_stiff_2": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.332,
+                "y": -0.064,
+                "z": 0.105
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "look_sun",
+            "phase": "stiff",
+            "rep": 2,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              3000.0,
+              3000.0,
+              3000.0,
+              2500.0,
+              2500.0,
+              2000.0,
+              2000.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "57_stiffness_soft": {
+          "type": "tool",
+          "inputs": {
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "tool": "robot.set_joint_stiffness"
+        },
+        "58_droop_look_sun_soft_2": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.332,
+                "y": -0.064,
+                "z": 0.105
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "look_sun",
+            "phase": "soft",
+            "rep": 2,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "59_stiffness_startup": {
+          "type": "tool",
+          "tool": "robot.set_joint_stiffness"
+        },
+        "60_pose_look_sun__above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.332,
+                "y": -0.064,
+                "z": 0.135
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "61_pose_start__above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2937
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "62_pose_start": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "63_droop_start_stiff_0": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "start",
+            "phase": "stiff",
+            "rep": 0,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              3000.0,
+              3000.0,
+              3000.0,
+              2500.0,
+              2500.0,
+              2000.0,
+              2000.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "64_stiffness_soft": {
+          "type": "tool",
+          "inputs": {
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "tool": "robot.set_joint_stiffness"
+        },
+        "65_droop_start_soft_0": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "start",
+            "phase": "soft",
+            "rep": 0,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "66_stiffness_startup": {
+          "type": "tool",
+          "tool": "robot.set_joint_stiffness"
+        },
+        "67_pose_start__above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2937
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "68_pose_start": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "69_droop_start_stiff_1": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "start",
+            "phase": "stiff",
+            "rep": 1,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              3000.0,
+              3000.0,
+              3000.0,
+              2500.0,
+              2500.0,
+              2000.0,
+              2000.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "70_stiffness_soft": {
+          "type": "tool",
+          "inputs": {
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "tool": "robot.set_joint_stiffness"
+        },
+        "71_droop_start_soft_1": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "start",
+            "phase": "soft",
+            "rep": 1,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "72_stiffness_startup": {
+          "type": "tool",
+          "tool": "robot.set_joint_stiffness"
+        },
+        "73_pose_start__above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2937
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "74_pose_start": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "75_droop_start_stiff_2": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "start",
+            "phase": "stiff",
+            "rep": 2,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              3000.0,
+              3000.0,
+              3000.0,
+              2500.0,
+              2500.0,
+              2000.0,
+              2000.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "76_stiffness_soft": {
+          "type": "tool",
+          "inputs": {
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "tool": "robot.set_joint_stiffness"
+        },
+        "77_droop_start_soft_2": {
+          "type": "script",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "label": "start",
+            "phase": "soft",
+            "rep": 2,
+            "session": {
+              "$ref": "03_droop_begin.session"
+            },
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "script": "scripts/measure_droop.py"
+        },
+        "78_stiffness_startup": {
+          "type": "tool",
+          "tool": "robot.set_joint_stiffness"
+        },
+        "79_pose_start__above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2937
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "80_pose_start": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "81_droop_report": {
+          "type": "script",
+          "inputs": {
+            "session": {
+              "$ref": "03_droop_begin.session"
+            }
+          },
+          "script": "scripts/droop_report.py"
+        },
+        "finished": {
+          "type": "noop"
+        }
+      },
+      "edges": [
+        [
+          "START",
+          "00_open"
+        ],
+        [
+          "00_open",
+          "01_stiffness_startup"
+        ],
+        [
+          "01_stiffness_startup",
+          "02_pose_start"
+        ],
+        [
+          "02_pose_start",
+          "03_droop_begin"
+        ],
+        [
+          "03_droop_begin",
+          "04_pose_pre_insert__above"
+        ],
+        [
+          "04_pose_pre_insert__above",
+          "05_pose_pre_insert"
+        ],
+        [
+          "05_pose_pre_insert",
+          "06_droop_pre_insert_stiff_0"
+        ],
+        [
+          "06_droop_pre_insert_stiff_0",
+          "07_stiffness_soft"
+        ],
+        [
+          "07_stiffness_soft",
+          "08_droop_pre_insert_soft_0"
+        ],
+        [
+          "08_droop_pre_insert_soft_0",
+          "09_stiffness_startup"
+        ],
+        [
+          "09_stiffness_startup",
+          "10_pose_pre_insert__above"
+        ],
+        [
+          "10_pose_pre_insert__above",
+          "11_pose_pre_insert"
+        ],
+        [
+          "11_pose_pre_insert",
+          "12_droop_pre_insert_stiff_1"
+        ],
+        [
+          "12_droop_pre_insert_stiff_1",
+          "13_stiffness_soft"
+        ],
+        [
+          "13_stiffness_soft",
+          "14_droop_pre_insert_soft_1"
+        ],
+        [
+          "14_droop_pre_insert_soft_1",
+          "15_stiffness_startup"
+        ],
+        [
+          "15_stiffness_startup",
+          "16_pose_pre_insert__above"
+        ],
+        [
+          "16_pose_pre_insert__above",
+          "17_pose_pre_insert"
+        ],
+        [
+          "17_pose_pre_insert",
+          "18_droop_pre_insert_stiff_2"
+        ],
+        [
+          "18_droop_pre_insert_stiff_2",
+          "19_stiffness_soft"
+        ],
+        [
+          "19_stiffness_soft",
+          "20_droop_pre_insert_soft_2"
+        ],
+        [
+          "20_droop_pre_insert_soft_2",
+          "21_stiffness_startup"
+        ],
+        [
+          "21_stiffness_startup",
+          "22_pose_pre_insert__above"
+        ],
+        [
+          "22_pose_pre_insert__above",
+          "23_pose_above_gears__above"
+        ],
+        [
+          "23_pose_above_gears__above",
+          "24_pose_above_gears"
+        ],
+        [
+          "24_pose_above_gears",
+          "25_droop_above_gears_stiff_0"
+        ],
+        [
+          "25_droop_above_gears_stiff_0",
+          "26_stiffness_soft"
+        ],
+        [
+          "26_stiffness_soft",
+          "27_droop_above_gears_soft_0"
+        ],
+        [
+          "27_droop_above_gears_soft_0",
+          "28_stiffness_startup"
+        ],
+        [
+          "28_stiffness_startup",
+          "29_pose_above_gears__above"
+        ],
+        [
+          "29_pose_above_gears__above",
+          "30_pose_above_gears"
+        ],
+        [
+          "30_pose_above_gears",
+          "31_droop_above_gears_stiff_1"
+        ],
+        [
+          "31_droop_above_gears_stiff_1",
+          "32_stiffness_soft"
+        ],
+        [
+          "32_stiffness_soft",
+          "33_droop_above_gears_soft_1"
+        ],
+        [
+          "33_droop_above_gears_soft_1",
+          "34_stiffness_startup"
+        ],
+        [
+          "34_stiffness_startup",
+          "35_pose_above_gears__above"
+        ],
+        [
+          "35_pose_above_gears__above",
+          "36_pose_above_gears"
+        ],
+        [
+          "36_pose_above_gears",
+          "37_droop_above_gears_stiff_2"
+        ],
+        [
+          "37_droop_above_gears_stiff_2",
+          "38_stiffness_soft"
+        ],
+        [
+          "38_stiffness_soft",
+          "39_droop_above_gears_soft_2"
+        ],
+        [
+          "39_droop_above_gears_soft_2",
+          "40_stiffness_startup"
+        ],
+        [
+          "40_stiffness_startup",
+          "41_pose_above_gears__above"
+        ],
+        [
+          "41_pose_above_gears__above",
+          "42_pose_look_sun__above"
+        ],
+        [
+          "42_pose_look_sun__above",
+          "43_pose_look_sun"
+        ],
+        [
+          "43_pose_look_sun",
+          "44_droop_look_sun_stiff_0"
+        ],
+        [
+          "44_droop_look_sun_stiff_0",
+          "45_stiffness_soft"
+        ],
+        [
+          "45_stiffness_soft",
+          "46_droop_look_sun_soft_0"
+        ],
+        [
+          "46_droop_look_sun_soft_0",
+          "47_stiffness_startup"
+        ],
+        [
+          "47_stiffness_startup",
+          "48_pose_look_sun__above"
+        ],
+        [
+          "48_pose_look_sun__above",
+          "49_pose_look_sun"
+        ],
+        [
+          "49_pose_look_sun",
+          "50_droop_look_sun_stiff_1"
+        ],
+        [
+          "50_droop_look_sun_stiff_1",
+          "51_stiffness_soft"
+        ],
+        [
+          "51_stiffness_soft",
+          "52_droop_look_sun_soft_1"
+        ],
+        [
+          "52_droop_look_sun_soft_1",
+          "53_stiffness_startup"
+        ],
+        [
+          "53_stiffness_startup",
+          "54_pose_look_sun__above"
+        ],
+        [
+          "54_pose_look_sun__above",
+          "55_pose_look_sun"
+        ],
+        [
+          "55_pose_look_sun",
+          "56_droop_look_sun_stiff_2"
+        ],
+        [
+          "56_droop_look_sun_stiff_2",
+          "57_stiffness_soft"
+        ],
+        [
+          "57_stiffness_soft",
+          "58_droop_look_sun_soft_2"
+        ],
+        [
+          "58_droop_look_sun_soft_2",
+          "59_stiffness_startup"
+        ],
+        [
+          "59_stiffness_startup",
+          "60_pose_look_sun__above"
+        ],
+        [
+          "60_pose_look_sun__above",
+          "61_pose_start__above"
+        ],
+        [
+          "61_pose_start__above",
+          "62_pose_start"
+        ],
+        [
+          "62_pose_start",
+          "63_droop_start_stiff_0"
+        ],
+        [
+          "63_droop_start_stiff_0",
+          "64_stiffness_soft"
+        ],
+        [
+          "64_stiffness_soft",
+          "65_droop_start_soft_0"
+        ],
+        [
+          "65_droop_start_soft_0",
+          "66_stiffness_startup"
+        ],
+        [
+          "66_stiffness_startup",
+          "67_pose_start__above"
+        ],
+        [
+          "67_pose_start__above",
+          "68_pose_start"
+        ],
+        [
+          "68_pose_start",
+          "69_droop_start_stiff_1"
+        ],
+        [
+          "69_droop_start_stiff_1",
+          "70_stiffness_soft"
+        ],
+        [
+          "70_stiffness_soft",
+          "71_droop_start_soft_1"
+        ],
+        [
+          "71_droop_start_soft_1",
+          "72_stiffness_startup"
+        ],
+        [
+          "72_stiffness_startup",
+          "73_pose_start__above"
+        ],
+        [
+          "73_pose_start__above",
+          "74_pose_start"
+        ],
+        [
+          "74_pose_start",
+          "75_droop_start_stiff_2"
+        ],
+        [
+          "75_droop_start_stiff_2",
+          "76_stiffness_soft"
+        ],
+        [
+          "76_stiffness_soft",
+          "77_droop_start_soft_2"
+        ],
+        [
+          "77_droop_start_soft_2",
+          "78_stiffness_startup"
+        ],
+        [
+          "78_stiffness_startup",
+          "79_pose_start__above"
+        ],
+        [
+          "79_pose_start__above",
+          "80_pose_start"
+        ],
+        [
+          "80_pose_start",
+          "81_droop_report"
+        ],
+        [
+          "81_droop_report",
+          "finished"
+        ],
+        [
+          "finished",
+          "END"
+        ]
+      ],
+      "conditional_edges": {},
+      "exit": {
+        "router_field": null,
+        "success_values": [
+          "finished"
+        ]
+      },
+      "on_error": "failed"
+    }
+  }
+}

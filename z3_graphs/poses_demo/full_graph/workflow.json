@@ -1,0 +1,2552 @@
+{
+  "version": 3,
+  "meta": {
+    "name": "z3_poses_demo",
+    "description": "Move through fixed joint poses, open/close."
+  },
+  "nodes": {
+    "poses": {
+      "type": "subgraph",
+      "ref": "poses_sg"
+    },
+    "done": {
+      "type": "end",
+      "status": "success"
+    },
+    "abort": {
+      "type": "end",
+      "status": "failure"
+    }
+  },
+  "edges": [
+    [
+      "START",
+      "poses"
+    ]
+  ],
+  "conditional_edges": {
+    "poses": {
+      "router_field": "exit",
+      "mapping": {
+        "finished": "done",
+        "failed": "abort"
+      }
+    }
+  },
+  "subgraphs": {
+    "poses_sg": {
+      "skill": "generic",
+      "inputs": {},
+      "outputs": {},
+      "nodes": {
+        "00_open": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "01_pose_start": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "02_pose_look_gearbox": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4431,
+                "y": 0.0278,
+                "z": 0.1286
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "03_wait_0p5": {
+          "type": "tool",
+          "inputs": {
+            "seconds": 0.5
+          },
+          "tool": "robot.wait"
+        },
+        "04_vision_gearbox": {
+          "type": "script",
+          "inputs": {
+            "nominal_xy": [
+              0.431,
+              0.027
+            ],
+            "column_z": {
+              "above_gearbox": 0.1339,
+              "pre_insert": 0.1113,
+              "touching_gearbox": 0.0997,
+              "in_gearbox": 0.0961
+            },
+            "z_top_guess": 0.034,
+            "max_offset_m": 0.006,
+            "correction_xy": [
+              0.0,
+              0.0
+            ],
+            "save_dir": "~/z3_rotor_images/gearbox"
+          },
+          "script": "scripts/detect_gearbox.py"
+        },
+        "05_pose_above_gears": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4274,
+                "y": -0.096,
+                "z": 0.1354
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "06_wait_0p5": {
+          "type": "tool",
+          "inputs": {
+            "seconds": 0.5
+          },
+          "tool": "robot.wait"
+        },
+        "07_vision_grasp_detect": {
+          "type": "script",
+          "inputs": {
+            "nominal_xy": [
+              0.4257,
+              -0.0967
+            ],
+            "z_top_guess": 0.0275,
+            "grasp_z": 0.0828,
+            "above_z": 0.1354,
+            "jaw_axis_deg": 90.0,
+            "max_offset_m": 0.008,
+            "save_dir": "~/z3_rotor_images/detections",
+            "correction_xy": [
+              0.0,
+              0.0
+            ]
+          },
+          "script": "scripts/detect_rotor.py"
+        },
+        "07_vision_grasp_above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "07_vision_grasp_detect.above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "07_vision_grasp_descend": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "07_vision_grasp_detect.grasp_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "08_close_0p55": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.55
+          },
+          "tool": "robot.close_gripper"
+        },
+        "09_pose_above_gears": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.4274,
+                "y": -0.096,
+                "z": 0.1354
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "10_pose_above_gearbox": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "04_vision_gearbox.above_gearbox"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "11_pose_pre_insert": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "04_vision_gearbox.pre_insert"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "12_wait_0p5": {
+          "type": "tool",
+          "inputs": {
+            "seconds": 0.5
+          },
+          "tool": "robot.wait"
+        },
+        "13_capture_held": {
+          "type": "script",
+          "inputs": {
+            "out_dir": "~/z3_rotor_images",
+            "label": "held"
+          },
+          "script": "scripts/capture_frame.py"
+        },
+        "14_stiffness_soft": {
+          "type": "tool",
+          "inputs": {
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "tool": "robot.set_joint_stiffness"
+        },
+        "15_insert_in_gearbox": {
+          "type": "tool",
+          "inputs": {
+            "depth_m": 0.015199999999999991,
+            "start_pose": {
+              "$ref": "04_vision_gearbox.pre_insert"
+            },
+            "push_m": 0.003,
+            "twist_deg": 5.0,
+            "twist_step_deg": 1.0,
+            "max_cycles": 3,
+            "seated_tol_m": 0.0008,
+            "relax_close_fraction": -1.0
+          },
+          "tool": "robot.insert_twist"
+        },
+        "16_open": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "17_pose_above_gearbox": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "04_vision_gearbox.above_gearbox"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "18_stiffness_startup": {
+          "type": "tool",
+          "tool": "robot.set_joint_stiffness"
+        },
+        "19_pose_start": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "20_find_sun_search": {
+          "type": "script",
+          "inputs": {
+            "prefer_xy": [
+              0.317,
+              -0.064
+            ],
+            "exclude": [
+              [
+                0.4257,
+                -0.0967,
+                0.03
+              ],
+              [
+                0.431,
+                0.027,
+                0.04
+              ]
+            ],
+            "save_dir": "~/z3_rotor_images/sun"
+          },
+          "script": "scripts/find_sun.py"
+        },
+        "20_find_sun_look": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "20_find_sun_search.look_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "21_vision_sun": {
+          "type": "script",
+          "inputs": {
+            "nominal_xy": {
+              "$ref": "20_find_sun_search.center_xy"
+            },
+            "max_offset_m": 0.012,
+            "grip_m": 0.004,
+            "save_dir": "~/z3_rotor_images/sun"
+          },
+          "script": "scripts/detect_sun.py"
+        },
+        "22_plan_sun": {
+          "type": "script",
+          "inputs": {
+            "center_xy": {
+              "$ref": "04_vision_gearbox.center_xy"
+            },
+            "housing_top_z": {
+              "$ref": "04_vision_gearbox.housing_top_z"
+            },
+            "sun_height_m": {
+              "$ref": "21_vision_sun.height_m"
+            },
+            "grip_m": 0.004,
+            "clearance_m": 0.002,
+            "start_gap_m": 0.008,
+            "press_gap_m": 0.008
+          },
+          "script": "scripts/plan_sun_insert.py"
+        },
+        "23_grasp_sun_above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "21_vision_sun.above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "23_grasp_sun_descend": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "21_vision_sun.grasp_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "23_grasp_sun_close": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.85
+          },
+          "tool": "robot.close_gripper"
+        },
+        "23_grasp_sun_lift": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "21_vision_sun.above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "24_insert_sun_above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "22_plan_sun.above_rotor"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "24_insert_sun_pre": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "22_plan_sun.pre"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "24_insert_sun_soft": {
+          "type": "tool",
+          "inputs": {
+            "k_theta": [
+              300.0,
+              200.0,
+              300.0,
+              300.0,
+              50.0,
+              100.0,
+              50.0
+            ]
+          },
+          "tool": "robot.set_joint_stiffness"
+        },
+        "24_insert_sun_insert": {
+          "type": "tool",
+          "inputs": {
+            "depth_m": {
+              "$ref": "22_plan_sun.insert_depth_m"
+            },
+            "stall_ok_m": {
+              "$ref": "22_plan_sun.insert_stall_ok_m"
+            },
+            "start_pose": {
+              "$ref": "22_plan_sun.pre"
+            },
+            "push_m": 0.003,
+            "twist_deg": 13.0,
+            "twist_step_deg": 1.5,
+            "max_cycles": 1,
+            "seated_tol_m": 0.0008,
+            "stall_accept_at_contact": true,
+            "search_radius_m": 0.0015,
+            "search_step_m": 0.0003
+          },
+          "tool": "robot.insert_twist"
+        },
+        "24_insert_sun_release": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "24_insert_sun_stiff": {
+          "type": "tool",
+          "tool": "robot.set_joint_stiffness"
+        },
+        "24_insert_sun_up": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "22_plan_sun.above_rotor"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "25_pose_start": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "26_open": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "27_stiffness_startup": {
+          "type": "tool",
+          "tool": "robot.set_joint_stiffness"
+        },
+        "28_screw_M4x18_0_open": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "28_screw_M4x18_0_look": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3312,
+                "y": -0.1806,
+                "z": 0.2024
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "28_screw_M4x18_0_detect": {
+          "type": "script",
+          "inputs": {
+            "label": "M4x18",
+            "slot_head_xy": [
+              0.42,
+              0.105
+            ],
+            "kit_axis_deg": 90.0,
+            "exclude": [
+              [
+                0.395,
+                0.09,
+                0.52,
+                0.2
+              ],
+              [
+                0.373,
+                -0.027,
+                0.483,
+                0.083
+              ],
+              [
+                0.385,
+                -0.135,
+                0.465,
+                -0.055
+              ]
+            ],
+            "save_dir": "~/z3_rotor_images/screws",
+            "head_tip_above_table_m": 0.0025,
+            "shank_tip_above_table_m": 0.0015,
+            "table_z": 0.0046,
+            "max_table_gap_m": 0.008,
+            "place_tip_above_table_m": 0.004,
+            "approach_m": 0.03,
+            "carry_m": 0.1,
+            "finger_width_m": 0.007,
+            "finger_thick_m": 0.0015,
+            "approach_open_m": 0.013
+          },
+          "script": "scripts/detect_screw.py"
+        },
+        "28_screw_M4x18_0_ready": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "28_screw_M4x18_0_above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "28_screw_M4x18_0_detect.above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "28_screw_M4x18_0_descend": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "28_screw_M4x18_0_detect.grasp_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "28_screw_M4x18_0_close": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 1.0
+          },
+          "tool": "robot.close_gripper"
+        },
+        "28_screw_M4x18_0_lift": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "28_screw_M4x18_0_detect.lift_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "28_screw_M4x18_0_to_kit": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "28_screw_M4x18_0_detect.slot_high"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "28_screw_M4x18_0_above_slot": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "28_screw_M4x18_0_detect.slot_above"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "28_screw_M4x18_0_place": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "28_screw_M4x18_0_detect.place_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "28_screw_M4x18_0_release": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "28_screw_M4x18_0_up": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "28_screw_M4x18_0_detect.slot_above"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "29_screw_M4x18_1_open": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "29_screw_M4x18_1_look": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3312,
+                "y": -0.1806,
+                "z": 0.2024
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "29_screw_M4x18_1_detect": {
+          "type": "script",
+          "inputs": {
+            "label": "M4x18",
+            "slot_head_xy": [
+              0.445,
+              0.105
+            ],
+            "kit_axis_deg": 90.0,
+            "exclude": [
+              [
+                0.395,
+                0.09,
+                0.52,
+                0.2
+              ],
+              [
+                0.373,
+                -0.027,
+                0.483,
+                0.083
+              ],
+              [
+                0.385,
+                -0.135,
+                0.465,
+                -0.055
+              ]
+            ],
+            "save_dir": "~/z3_rotor_images/screws",
+            "head_tip_above_table_m": 0.0025,
+            "shank_tip_above_table_m": 0.0015,
+            "table_z": 0.0046,
+            "max_table_gap_m": 0.008,
+            "place_tip_above_table_m": 0.004,
+            "approach_m": 0.03,
+            "carry_m": 0.1,
+            "finger_width_m": 0.007,
+            "finger_thick_m": 0.0015,
+            "approach_open_m": 0.013
+          },
+          "script": "scripts/detect_screw.py"
+        },
+        "29_screw_M4x18_1_ready": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "29_screw_M4x18_1_above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "29_screw_M4x18_1_detect.above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "29_screw_M4x18_1_descend": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "29_screw_M4x18_1_detect.grasp_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "29_screw_M4x18_1_close": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 1.0
+          },
+          "tool": "robot.close_gripper"
+        },
+        "29_screw_M4x18_1_lift": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "29_screw_M4x18_1_detect.lift_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "29_screw_M4x18_1_to_kit": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "29_screw_M4x18_1_detect.slot_high"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "29_screw_M4x18_1_above_slot": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "29_screw_M4x18_1_detect.slot_above"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "29_screw_M4x18_1_place": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "29_screw_M4x18_1_detect.place_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "29_screw_M4x18_1_release": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "29_screw_M4x18_1_up": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "29_screw_M4x18_1_detect.slot_above"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "30_screw_M4x18_2_open": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "30_screw_M4x18_2_look": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3312,
+                "y": -0.1806,
+                "z": 0.2024
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "30_screw_M4x18_2_detect": {
+          "type": "script",
+          "inputs": {
+            "label": "M4x18",
+            "slot_head_xy": [
+              0.47,
+              0.105
+            ],
+            "kit_axis_deg": 90.0,
+            "exclude": [
+              [
+                0.395,
+                0.09,
+                0.52,
+                0.2
+              ],
+              [
+                0.373,
+                -0.027,
+                0.483,
+                0.083
+              ],
+              [
+                0.385,
+                -0.135,
+                0.465,
+                -0.055
+              ]
+            ],
+            "save_dir": "~/z3_rotor_images/screws",
+            "head_tip_above_table_m": 0.0025,
+            "shank_tip_above_table_m": 0.0015,
+            "table_z": 0.0046,
+            "max_table_gap_m": 0.008,
+            "place_tip_above_table_m": 0.004,
+            "approach_m": 0.03,
+            "carry_m": 0.1,
+            "finger_width_m": 0.007,
+            "finger_thick_m": 0.0015,
+            "approach_open_m": 0.013
+          },
+          "script": "scripts/detect_screw.py"
+        },
+        "30_screw_M4x18_2_ready": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "30_screw_M4x18_2_above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "30_screw_M4x18_2_detect.above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "30_screw_M4x18_2_descend": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "30_screw_M4x18_2_detect.grasp_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "30_screw_M4x18_2_close": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 1.0
+          },
+          "tool": "robot.close_gripper"
+        },
+        "30_screw_M4x18_2_lift": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "30_screw_M4x18_2_detect.lift_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "30_screw_M4x18_2_to_kit": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "30_screw_M4x18_2_detect.slot_high"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "30_screw_M4x18_2_above_slot": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "30_screw_M4x18_2_detect.slot_above"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "30_screw_M4x18_2_place": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "30_screw_M4x18_2_detect.place_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "30_screw_M4x18_2_release": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "30_screw_M4x18_2_up": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "30_screw_M4x18_2_detect.slot_above"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "31_screw_M4x18_3_open": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "31_screw_M4x18_3_look": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3312,
+                "y": -0.1806,
+                "z": 0.2024
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "31_screw_M4x18_3_detect": {
+          "type": "script",
+          "inputs": {
+            "label": "M4x18",
+            "slot_head_xy": [
+              0.495,
+              0.105
+            ],
+            "kit_axis_deg": 90.0,
+            "exclude": [
+              [
+                0.395,
+                0.09,
+                0.52,
+                0.2
+              ],
+              [
+                0.373,
+                -0.027,
+                0.483,
+                0.083
+              ],
+              [
+                0.385,
+                -0.135,
+                0.465,
+                -0.055
+              ]
+            ],
+            "save_dir": "~/z3_rotor_images/screws",
+            "head_tip_above_table_m": 0.0025,
+            "shank_tip_above_table_m": 0.0015,
+            "table_z": 0.0046,
+            "max_table_gap_m": 0.008,
+            "place_tip_above_table_m": 0.004,
+            "approach_m": 0.03,
+            "carry_m": 0.1,
+            "finger_width_m": 0.007,
+            "finger_thick_m": 0.0015,
+            "approach_open_m": 0.013
+          },
+          "script": "scripts/detect_screw.py"
+        },
+        "31_screw_M4x18_3_ready": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "31_screw_M4x18_3_above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "31_screw_M4x18_3_detect.above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "31_screw_M4x18_3_descend": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "31_screw_M4x18_3_detect.grasp_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "31_screw_M4x18_3_close": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 1.0
+          },
+          "tool": "robot.close_gripper"
+        },
+        "31_screw_M4x18_3_lift": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "31_screw_M4x18_3_detect.lift_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "31_screw_M4x18_3_to_kit": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "31_screw_M4x18_3_detect.slot_high"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "31_screw_M4x18_3_above_slot": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "31_screw_M4x18_3_detect.slot_above"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "31_screw_M4x18_3_place": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "31_screw_M4x18_3_detect.place_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "31_screw_M4x18_3_release": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "31_screw_M4x18_3_up": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "31_screw_M4x18_3_detect.slot_above"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "32_screw_M4x25_0_open": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "32_screw_M4x25_0_look": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3312,
+                "y": -0.1806,
+                "z": 0.2024
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "32_screw_M4x25_0_detect": {
+          "type": "script",
+          "inputs": {
+            "label": "M4x25",
+            "slot_head_xy": [
+              0.42,
+              0.15
+            ],
+            "kit_axis_deg": 90.0,
+            "exclude": [
+              [
+                0.395,
+                0.09,
+                0.52,
+                0.2
+              ],
+              [
+                0.373,
+                -0.027,
+                0.483,
+                0.083
+              ],
+              [
+                0.385,
+                -0.135,
+                0.465,
+                -0.055
+              ]
+            ],
+            "save_dir": "~/z3_rotor_images/screws",
+            "head_tip_above_table_m": 0.0025,
+            "shank_tip_above_table_m": 0.0015,
+            "table_z": 0.0046,
+            "max_table_gap_m": 0.008,
+            "place_tip_above_table_m": 0.004,
+            "approach_m": 0.03,
+            "carry_m": 0.1,
+            "finger_width_m": 0.007,
+            "finger_thick_m": 0.0015,
+            "approach_open_m": 0.013
+          },
+          "script": "scripts/detect_screw.py"
+        },
+        "32_screw_M4x25_0_ready": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "32_screw_M4x25_0_above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "32_screw_M4x25_0_detect.above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "32_screw_M4x25_0_descend": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "32_screw_M4x25_0_detect.grasp_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "32_screw_M4x25_0_close": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 1.0
+          },
+          "tool": "robot.close_gripper"
+        },
+        "32_screw_M4x25_0_lift": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "32_screw_M4x25_0_detect.lift_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "32_screw_M4x25_0_to_kit": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "32_screw_M4x25_0_detect.slot_high"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "32_screw_M4x25_0_above_slot": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "32_screw_M4x25_0_detect.slot_above"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "32_screw_M4x25_0_place": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "32_screw_M4x25_0_detect.place_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "32_screw_M4x25_0_release": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "32_screw_M4x25_0_up": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "32_screw_M4x25_0_detect.slot_above"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "33_screw_M4x25_1_open": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "33_screw_M4x25_1_look": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3312,
+                "y": -0.1806,
+                "z": 0.2024
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "33_screw_M4x25_1_detect": {
+          "type": "script",
+          "inputs": {
+            "label": "M4x25",
+            "slot_head_xy": [
+              0.445,
+              0.15
+            ],
+            "kit_axis_deg": 90.0,
+            "exclude": [
+              [
+                0.395,
+                0.09,
+                0.52,
+                0.2
+              ],
+              [
+                0.373,
+                -0.027,
+                0.483,
+                0.083
+              ],
+              [
+                0.385,
+                -0.135,
+                0.465,
+                -0.055
+              ]
+            ],
+            "save_dir": "~/z3_rotor_images/screws",
+            "head_tip_above_table_m": 0.0025,
+            "shank_tip_above_table_m": 0.0015,
+            "table_z": 0.0046,
+            "max_table_gap_m": 0.008,
+            "place_tip_above_table_m": 0.004,
+            "approach_m": 0.03,
+            "carry_m": 0.1,
+            "finger_width_m": 0.007,
+            "finger_thick_m": 0.0015,
+            "approach_open_m": 0.013
+          },
+          "script": "scripts/detect_screw.py"
+        },
+        "33_screw_M4x25_1_ready": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "33_screw_M4x25_1_above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "33_screw_M4x25_1_detect.above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "33_screw_M4x25_1_descend": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "33_screw_M4x25_1_detect.grasp_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "33_screw_M4x25_1_close": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 1.0
+          },
+          "tool": "robot.close_gripper"
+        },
+        "33_screw_M4x25_1_lift": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "33_screw_M4x25_1_detect.lift_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "33_screw_M4x25_1_to_kit": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "33_screw_M4x25_1_detect.slot_high"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "33_screw_M4x25_1_above_slot": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "33_screw_M4x25_1_detect.slot_above"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "33_screw_M4x25_1_place": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "33_screw_M4x25_1_detect.place_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "33_screw_M4x25_1_release": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "33_screw_M4x25_1_up": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "33_screw_M4x25_1_detect.slot_above"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "34_screw_M4x25_2_open": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "34_screw_M4x25_2_look": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3312,
+                "y": -0.1806,
+                "z": 0.2024
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "34_screw_M4x25_2_detect": {
+          "type": "script",
+          "inputs": {
+            "label": "M4x25",
+            "slot_head_xy": [
+              0.47,
+              0.15
+            ],
+            "kit_axis_deg": 90.0,
+            "exclude": [
+              [
+                0.395,
+                0.09,
+                0.52,
+                0.2
+              ],
+              [
+                0.373,
+                -0.027,
+                0.483,
+                0.083
+              ],
+              [
+                0.385,
+                -0.135,
+                0.465,
+                -0.055
+              ]
+            ],
+            "save_dir": "~/z3_rotor_images/screws",
+            "head_tip_above_table_m": 0.0025,
+            "shank_tip_above_table_m": 0.0015,
+            "table_z": 0.0046,
+            "max_table_gap_m": 0.008,
+            "place_tip_above_table_m": 0.004,
+            "approach_m": 0.03,
+            "carry_m": 0.1,
+            "finger_width_m": 0.007,
+            "finger_thick_m": 0.0015,
+            "approach_open_m": 0.013
+          },
+          "script": "scripts/detect_screw.py"
+        },
+        "34_screw_M4x25_2_ready": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "34_screw_M4x25_2_above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "34_screw_M4x25_2_detect.above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "34_screw_M4x25_2_descend": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "34_screw_M4x25_2_detect.grasp_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "34_screw_M4x25_2_close": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 1.0
+          },
+          "tool": "robot.close_gripper"
+        },
+        "34_screw_M4x25_2_lift": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "34_screw_M4x25_2_detect.lift_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "34_screw_M4x25_2_to_kit": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "34_screw_M4x25_2_detect.slot_high"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "34_screw_M4x25_2_above_slot": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "34_screw_M4x25_2_detect.slot_above"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "34_screw_M4x25_2_place": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "34_screw_M4x25_2_detect.place_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "34_screw_M4x25_2_release": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "34_screw_M4x25_2_up": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "34_screw_M4x25_2_detect.slot_above"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "35_screw_M4x25_3_open": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75
+          },
+          "tool": "robot.open_gripper"
+        },
+        "35_screw_M4x25_3_look": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3312,
+                "y": -0.1806,
+                "z": 0.2024
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "35_screw_M4x25_3_detect": {
+          "type": "script",
+          "inputs": {
+            "label": "M4x25",
+            "slot_head_xy": [
+              0.495,
+              0.15
+            ],
+            "kit_axis_deg": 90.0,
+            "exclude": [
+              [
+                0.395,
+                0.09,
+                0.52,
+                0.2
+              ],
+              [
+                0.373,
+                -0.027,
+                0.483,
+                0.083
+              ],
+              [
+                0.385,
+                -0.135,
+                0.465,
+                -0.055
+              ]
+            ],
+            "save_dir": "~/z3_rotor_images/screws",
+            "head_tip_above_table_m": 0.0025,
+            "shank_tip_above_table_m": 0.0015,
+            "table_z": 0.0046,
+            "max_table_gap_m": 0.008,
+            "place_tip_above_table_m": 0.004,
+            "approach_m": 0.03,
+            "carry_m": 0.1,
+            "finger_width_m": 0.007,
+            "finger_thick_m": 0.0015,
+            "approach_open_m": 0.013
+          },
+          "script": "scripts/detect_screw.py"
+        },
+        "35_screw_M4x25_3_ready": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "35_screw_M4x25_3_above": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "35_screw_M4x25_3_detect.above_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "35_screw_M4x25_3_descend": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "35_screw_M4x25_3_detect.grasp_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "35_screw_M4x25_3_close": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 1.0
+          },
+          "tool": "robot.close_gripper"
+        },
+        "35_screw_M4x25_3_lift": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "35_screw_M4x25_3_detect.lift_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "35_screw_M4x25_3_to_kit": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "35_screw_M4x25_3_detect.slot_high"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "35_screw_M4x25_3_above_slot": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "35_screw_M4x25_3_detect.slot_above"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "35_screw_M4x25_3_place": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "35_screw_M4x25_3_detect.place_pose"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "35_screw_M4x25_3_release": {
+          "type": "tool",
+          "inputs": {
+            "settle_steps": 75,
+            "fraction": 0.75
+          },
+          "tool": "robot.close_gripper"
+        },
+        "35_screw_M4x25_3_up": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "$ref": "35_screw_M4x25_3_detect.slot_above"
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "36_pose_start": {
+          "type": "tool",
+          "inputs": {
+            "pose": {
+              "position": {
+                "x": 0.3898,
+                "y": -0.0461,
+                "z": 0.2637
+              },
+              "rotation": {
+                "w": 6.123233995736766e-17,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            },
+            "tolerance": 0.03,
+            "max_steps": 600
+          },
+          "tool": "robot.go_to_pose"
+        },
+        "finished": {
+          "type": "noop"
+        }
+      },
+      "edges": [
+        [
+          "START",
+          "00_open"
+        ],
+        [
+          "00_open",
+          "01_pose_start"
+        ],
+        [
+          "01_pose_start",
+          "02_pose_look_gearbox"
+        ],
+        [
+          "02_pose_look_gearbox",
+          "03_wait_0p5"
+        ],
+        [
+          "03_wait_0p5",
+          "04_vision_gearbox"
+        ],
+        [
+          "04_vision_gearbox",
+          "05_pose_above_gears"
+        ],
+        [
+          "05_pose_above_gears",
+          "06_wait_0p5"
+        ],
+        [
+          "07_vision_grasp_detect",
+          "07_vision_grasp_above"
+        ],
+        [
+          "07_vision_grasp_above",
+          "07_vision_grasp_descend"
+        ],
+        [
+          "06_wait_0p5",
+          "07_vision_grasp_detect"
+        ],
+        [
+          "07_vision_grasp_descend",
+          "08_close_0p55"
+        ],
+        [
+          "08_close_0p55",
+          "09_pose_above_gears"
+        ],
+        [
+          "09_pose_above_gears",
+          "10_pose_above_gearbox"
+        ],
+        [
+          "10_pose_above_gearbox",
+          "11_pose_pre_insert"
+        ],
+        [
+          "11_pose_pre_insert",
+          "12_wait_0p5"
+        ],
+        [
+          "12_wait_0p5",
+          "13_capture_held"
+        ],
+        [
+          "13_capture_held",
+          "14_stiffness_soft"
+        ],
+        [
+          "14_stiffness_soft",
+          "15_insert_in_gearbox"
+        ],
+        [
+          "15_insert_in_gearbox",
+          "16_open"
+        ],
+        [
+          "16_open",
+          "17_pose_above_gearbox"
+        ],
+        [
+          "17_pose_above_gearbox",
+          "18_stiffness_startup"
+        ],
+        [
+          "18_stiffness_startup",
+          "19_pose_start"
+        ],
+        [
+          "20_find_sun_search",
+          "20_find_sun_look"
+        ],
+        [
+          "19_pose_start",
+          "20_find_sun_search"
+        ],
+        [
+          "20_find_sun_look",
+          "21_vision_sun"
+        ],
+        [
+          "21_vision_sun",
+          "22_plan_sun"
+        ],
+        [
+          "23_grasp_sun_above",
+          "23_grasp_sun_descend"
+        ],
+        [
+          "23_grasp_sun_descend",
+          "23_grasp_sun_close"
+        ],
+        [
+          "23_grasp_sun_close",
+          "23_grasp_sun_lift"
+        ],
+        [
+          "22_plan_sun",
+          "23_grasp_sun_above"
+        ],
+        [
+          "24_insert_sun_above",
+          "24_insert_sun_pre"
+        ],
+        [
+          "24_insert_sun_pre",
+          "24_insert_sun_soft"
+        ],
+        [
+          "24_insert_sun_soft",
+          "24_insert_sun_insert"
+        ],
+        [
+          "24_insert_sun_insert",
+          "24_insert_sun_release"
+        ],
+        [
+          "24_insert_sun_release",
+          "24_insert_sun_stiff"
+        ],
+        [
+          "24_insert_sun_stiff",
+          "24_insert_sun_up"
+        ],
+        [
+          "23_grasp_sun_lift",
+          "24_insert_sun_above"
+        ],
+        [
+          "24_insert_sun_up",
+          "25_pose_start"
+        ],
+        [
+          "25_pose_start",
+          "26_open"
+        ],
+        [
+          "26_open",
+          "27_stiffness_startup"
+        ],
+        [
+          "28_screw_M4x18_0_open",
+          "28_screw_M4x18_0_look"
+        ],
+        [
+          "28_screw_M4x18_0_look",
+          "28_screw_M4x18_0_detect"
+        ],
+        [
+          "28_screw_M4x18_0_detect",
+          "28_screw_M4x18_0_ready"
+        ],
+        [
+          "28_screw_M4x18_0_ready",
+          "28_screw_M4x18_0_above"
+        ],
+        [
+          "28_screw_M4x18_0_above",
+          "28_screw_M4x18_0_descend"
+        ],
+        [
+          "28_screw_M4x18_0_descend",
+          "28_screw_M4x18_0_close"
+        ],
+        [
+          "28_screw_M4x18_0_close",
+          "28_screw_M4x18_0_lift"
+        ],
+        [
+          "28_screw_M4x18_0_lift",
+          "28_screw_M4x18_0_to_kit"
+        ],
+        [
+          "28_screw_M4x18_0_to_kit",
+          "28_screw_M4x18_0_above_slot"
+        ],
+        [
+          "28_screw_M4x18_0_above_slot",
+          "28_screw_M4x18_0_place"
+        ],
+        [
+          "28_screw_M4x18_0_place",
+          "28_screw_M4x18_0_release"
+        ],
+        [
+          "28_screw_M4x18_0_release",
+          "28_screw_M4x18_0_up"
+        ],
+        [
+          "27_stiffness_startup",
+          "28_screw_M4x18_0_open"
+        ],
+        [
+          "29_screw_M4x18_1_open",
+          "29_screw_M4x18_1_look"
+        ],
+        [
+          "29_screw_M4x18_1_look",
+          "29_screw_M4x18_1_detect"
+        ],
+        [
+          "29_screw_M4x18_1_detect",
+          "29_screw_M4x18_1_ready"
+        ],
+        [
+          "29_screw_M4x18_1_ready",
+          "29_screw_M4x18_1_above"
+        ],
+        [
+          "29_screw_M4x18_1_above",
+          "29_screw_M4x18_1_descend"
+        ],
+        [
+          "29_screw_M4x18_1_descend",
+          "29_screw_M4x18_1_close"
+        ],
+        [
+          "29_screw_M4x18_1_close",
+          "29_screw_M4x18_1_lift"
+        ],
+        [
+          "29_screw_M4x18_1_lift",
+          "29_screw_M4x18_1_to_kit"
+        ],
+        [
+          "29_screw_M4x18_1_to_kit",
+          "29_screw_M4x18_1_above_slot"
+        ],
+        [
+          "29_screw_M4x18_1_above_slot",
+          "29_screw_M4x18_1_place"
+        ],
+        [
+          "29_screw_M4x18_1_place",
+          "29_screw_M4x18_1_release"
+        ],
+        [
+          "29_screw_M4x18_1_release",
+          "29_screw_M4x18_1_up"
+        ],
+        [
+          "28_screw_M4x18_0_up",
+          "29_screw_M4x18_1_open"
+        ],
+        [
+          "30_screw_M4x18_2_open",
+          "30_screw_M4x18_2_look"
+        ],
+        [
+          "30_screw_M4x18_2_look",
+          "30_screw_M4x18_2_detect"
+        ],
+        [
+          "30_screw_M4x18_2_detect",
+          "30_screw_M4x18_2_ready"
+        ],
+        [
+          "30_screw_M4x18_2_ready",
+          "30_screw_M4x18_2_above"
+        ],
+        [
+          "30_screw_M4x18_2_above",
+          "30_screw_M4x18_2_descend"
+        ],
+        [
+          "30_screw_M4x18_2_descend",
+          "30_screw_M4x18_2_close"
+        ],
+        [
+          "30_screw_M4x18_2_close",
+          "30_screw_M4x18_2_lift"
+        ],
+        [
+          "30_screw_M4x18_2_lift",
+          "30_screw_M4x18_2_to_kit"
+        ],
+        [
+          "30_screw_M4x18_2_to_kit",
+          "30_screw_M4x18_2_above_slot"
+        ],
+        [
+          "30_screw_M4x18_2_above_slot",
+          "30_screw_M4x18_2_place"
+        ],
+        [
+          "30_screw_M4x18_2_place",
+          "30_screw_M4x18_2_release"
+        ],
+        [
+          "30_screw_M4x18_2_release",
+          "30_screw_M4x18_2_up"
+        ],
+        [
+          "29_screw_M4x18_1_up",
+          "30_screw_M4x18_2_open"
+        ],
+        [
+          "31_screw_M4x18_3_open",
+          "31_screw_M4x18_3_look"
+        ],
+        [
+          "31_screw_M4x18_3_look",
+          "31_screw_M4x18_3_detect"
+        ],
+        [
+          "31_screw_M4x18_3_detect",
+          "31_screw_M4x18_3_ready"
+        ],
+        [
+          "31_screw_M4x18_3_ready",
+          "31_screw_M4x18_3_above"
+        ],
+        [
+          "31_screw_M4x18_3_above",
+          "31_screw_M4x18_3_descend"
+        ],
+        [
+          "31_screw_M4x18_3_descend",
+          "31_screw_M4x18_3_close"
+        ],
+        [
+          "31_screw_M4x18_3_close",
+          "31_screw_M4x18_3_lift"
+        ],
+        [
+          "31_screw_M4x18_3_lift",
+          "31_screw_M4x18_3_to_kit"
+        ],
+        [
+          "31_screw_M4x18_3_to_kit",
+          "31_screw_M4x18_3_above_slot"
+        ],
+        [
+          "31_screw_M4x18_3_above_slot",
+          "31_screw_M4x18_3_place"
+        ],
+        [
+          "31_screw_M4x18_3_place",
+          "31_screw_M4x18_3_release"
+        ],
+        [
+          "31_screw_M4x18_3_release",
+          "31_screw_M4x18_3_up"
+        ],
+        [
+          "30_screw_M4x18_2_up",
+          "31_screw_M4x18_3_open"
+        ],
+        [
+          "32_screw_M4x25_0_open",
+          "32_screw_M4x25_0_look"
+        ],
+        [
+          "32_screw_M4x25_0_look",
+          "32_screw_M4x25_0_detect"
+        ],
+        [
+          "32_screw_M4x25_0_detect",
+          "32_screw_M4x25_0_ready"
+        ],
+        [
+          "32_screw_M4x25_0_ready",
+          "32_screw_M4x25_0_above"
+        ],
+        [
+          "32_screw_M4x25_0_above",
+          "32_screw_M4x25_0_descend"
+        ],
+        [
+          "32_screw_M4x25_0_descend",
+          "32_screw_M4x25_0_close"
+        ],
+        [
+          "32_screw_M4x25_0_close",
+          "32_screw_M4x25_0_lift"
+        ],
+        [
+          "32_screw_M4x25_0_lift",
+          "32_screw_M4x25_0_to_kit"
+        ],
+        [
+          "32_screw_M4x25_0_to_kit",
+          "32_screw_M4x25_0_above_slot"
+        ],
+        [
+          "32_screw_M4x25_0_above_slot",
+          "32_screw_M4x25_0_place"
+        ],
+        [
+          "32_screw_M4x25_0_place",
+          "32_screw_M4x25_0_release"
+        ],
+        [
+          "32_screw_M4x25_0_release",
+          "32_screw_M4x25_0_up"
+        ],
+        [
+          "31_screw_M4x18_3_up",
+          "32_screw_M4x25_0_open"
+        ],
+        [
+          "33_screw_M4x25_1_open",
+          "33_screw_M4x25_1_look"
+        ],
+        [
+          "33_screw_M4x25_1_look",
+          "33_screw_M4x25_1_detect"
+        ],
+        [
+          "33_screw_M4x25_1_detect",
+          "33_screw_M4x25_1_ready"
+        ],
+        [
+          "33_screw_M4x25_1_ready",
+          "33_screw_M4x25_1_above"
+        ],
+        [
+          "33_screw_M4x25_1_above",
+          "33_screw_M4x25_1_descend"
+        ],
+        [
+          "33_screw_M4x25_1_descend",
+          "33_screw_M4x25_1_close"
+        ],
+        [
+          "33_screw_M4x25_1_close",
+          "33_screw_M4x25_1_lift"
+        ],
+        [
+          "33_screw_M4x25_1_lift",
+          "33_screw_M4x25_1_to_kit"
+        ],
+        [
+          "33_screw_M4x25_1_to_kit",
+          "33_screw_M4x25_1_above_slot"
+        ],
+        [
+          "33_screw_M4x25_1_above_slot",
+          "33_screw_M4x25_1_place"
+        ],
+        [
+          "33_screw_M4x25_1_place",
+          "33_screw_M4x25_1_release"
+        ],
+        [
+          "33_screw_M4x25_1_release",
+          "33_screw_M4x25_1_up"
+        ],
+        [
+          "32_screw_M4x25_0_up",
+          "33_screw_M4x25_1_open"
+        ],
+        [
+          "34_screw_M4x25_2_open",
+          "34_screw_M4x25_2_look"
+        ],
+        [
+          "34_screw_M4x25_2_look",
+          "34_screw_M4x25_2_detect"
+        ],
+        [
+          "34_screw_M4x25_2_detect",
+          "34_screw_M4x25_2_ready"
+        ],
+        [
+          "34_screw_M4x25_2_ready",
+          "34_screw_M4x25_2_above"
+        ],
+        [
+          "34_screw_M4x25_2_above",
+          "34_screw_M4x25_2_descend"
+        ],
+        [
+          "34_screw_M4x25_2_descend",
+          "34_screw_M4x25_2_close"
+        ],
+        [
+          "34_screw_M4x25_2_close",
+          "34_screw_M4x25_2_lift"
+        ],
+        [
+          "34_screw_M4x25_2_lift",
+          "34_screw_M4x25_2_to_kit"
+        ],
+        [
+          "34_screw_M4x25_2_to_kit",
+          "34_screw_M4x25_2_above_slot"
+        ],
+        [
+          "34_screw_M4x25_2_above_slot",
+          "34_screw_M4x25_2_place"
+        ],
+        [
+          "34_screw_M4x25_2_place",
+          "34_screw_M4x25_2_release"
+        ],
+        [
+          "34_screw_M4x25_2_release",
+          "34_screw_M4x25_2_up"
+        ],
+        [
+          "33_screw_M4x25_1_up",
+          "34_screw_M4x25_2_open"
+        ],
+        [
+          "35_screw_M4x25_3_open",
+          "35_screw_M4x25_3_look"
+        ],
+        [
+          "35_screw_M4x25_3_look",
+          "35_screw_M4x25_3_detect"
+        ],
+        [
+          "35_screw_M4x25_3_detect",
+          "35_screw_M4x25_3_ready"
+        ],
+        [
+          "35_screw_M4x25_3_ready",
+          "35_screw_M4x25_3_above"
+        ],
+        [
+          "35_screw_M4x25_3_above",
+          "35_screw_M4x25_3_descend"
+        ],
+        [
+          "35_screw_M4x25_3_descend",
+          "35_screw_M4x25_3_close"
+        ],
+        [
+          "35_screw_M4x25_3_close",
+          "35_screw_M4x25_3_lift"
+        ],
+        [
+          "35_screw_M4x25_3_lift",
+          "35_screw_M4x25_3_to_kit"
+        ],
+        [
+          "35_screw_M4x25_3_to_kit",
+          "35_screw_M4x25_3_above_slot"
+        ],
+        [
+          "35_screw_M4x25_3_above_slot",
+          "35_screw_M4x25_3_place"
+        ],
+        [
+          "35_screw_M4x25_3_place",
+          "35_screw_M4x25_3_release"
+        ],
+        [
+          "35_screw_M4x25_3_release",
+          "35_screw_M4x25_3_up"
+        ],
+        [
+          "34_screw_M4x25_2_up",
+          "35_screw_M4x25_3_open"
+        ],
+        [
+          "35_screw_M4x25_3_up",
+          "36_pose_start"
+        ],
+        [
+          "36_pose_start",
+          "finished"
+        ],
+        [
+          "finished",
+          "END"
+        ]
+      ],
+      "conditional_edges": {},
+      "exit": {
+        "router_field": null,
+        "success_values": [
+          "finished"
+        ]
+      },
+      "on_error": "failed"
+    }
+  }
+}
